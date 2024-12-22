@@ -653,6 +653,9 @@ bool Context::createDevice(VkSurfaceKHR mirrorSurface)
   // Add the required swapchain extension for mirror view
   vulkanDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
+  // Add the timeline semaphore extension
+  vulkanDeviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
   // Check that all Vulkan device extensions are supported
   {
     for (const char* extension : vulkanDeviceExtensions)
@@ -719,6 +722,12 @@ bool Context::createDevice(VkSurfaceKHR mirrorSurface)
 
     physicalDeviceFeatures.shaderStorageImageMultisample = VK_TRUE; // Needed for some OpenXR implementations
     physicalDeviceMultiviewFeatures.multiview = VK_TRUE;            // Needed for stereo rendering
+
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES};
+    timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+
+    physicalDeviceMultiviewFeatures.pNext = &timelineSemaphoreFeatures;
 
     constexpr float queuePriority = 1.0f;
 

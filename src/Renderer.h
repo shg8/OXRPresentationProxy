@@ -25,6 +25,7 @@ class Renderer final
 public:
   Renderer(const Context* context, const Headset* headset, const MeshData* meshData, const std::vector<Model*>& models);
   ~Renderer();
+  void renderSolidColors(uint32_t swapchainImageIndex);
 
   void render(const glm::mat4& cameraMatrix, size_t swapchainImageIndex, float time);
   void submit(bool useSemaphores) const;
