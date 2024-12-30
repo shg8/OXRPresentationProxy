@@ -19,8 +19,14 @@ int main()
 {
   glm::mat4 cameraMatrix = glm::mat4(1.0f); // Transform from world to stage space
 
-  Context context;
-  if (!context.isValid())
+  Context* context = new Context();
+  if (!context->isValid())
+  {
+    return EXIT_FAILURE;
+  }
+
+  Renderer* renderer = new Renderer(context, /*headset*/nullptr, /*models*/{});
+  if (!renderer->isValid())
   {
     return EXIT_FAILURE;
   }
@@ -31,7 +37,7 @@ int main()
     return EXIT_FAILURE;
   }
 
-  if (!context.createDevice(mirrorView.getSurface()))
+  if (!context->createDevice(mirrorView.getSurface()))
   {
     return EXIT_FAILURE;
   }
@@ -70,8 +76,24 @@ int main()
     {
       headset.endFrame();
     }
+
+    // Generate stereo images using CUDA
+    // (You could do any GPU kernel: fractal, color bars, text overlay, etc.)
+    // e.g. generateCudaImage(leftCudaArray);
+    //      generateCudaImage(rightCudaArray);
+
+    // 3. Upload to the Vulkan images
+    renderer->updateCudaStereoImages(/* leftCudaArray, rightCudaArray */);
+
+    // 4. Acquire swapchain image from MirrorView, then:
+    //    renderer->blitCudaStereoToSwapchain(cmd, swapchainImage, /*leftEye=*/true);
+    //    Or do it for each eye
+
+    // 5. Present
   }
 
-  context.sync(); // Sync before destroying so that resources are free
+  context->sync(); // Sync before destroying so that resources are free
+  delete renderer;
+  delete context;
   return EXIT_SUCCESS;
 }

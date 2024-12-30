@@ -9,6 +9,7 @@
 #include "RenderProcess.h"
 #include "RenderTarget.h"
 #include "Util.h"
+#include "CudaInterop.h"
 
 #include <array>
 
@@ -202,6 +203,18 @@ Renderer::Renderer(const Context* context,
   }
 
   indexOffset = meshData->getIndexOffset();
+
+  // Create our two CudaVulkanImage objects for left-eye and right-eye
+  VkExtent2D stereoSize { 1920, 1080 }; // Example resolution – you can adjust
+  cudaStereoImages.push_back(cudainterop::createCudaVulkanImage(context, stereoSize, VK_FORMAT_R8G8B8A8_UNORM));
+  cudaStereoImages.push_back(cudainterop::createCudaVulkanImage(context, stereoSize, VK_FORMAT_R8G8B8A8_UNORM));
+
+  if (!cudaStereoImages.at(0).valid || !cudaStereoImages.at(1).valid)
+  {
+    util::error(Error::FeatureNotSupported, "Failed to create CUDA-Vulkan images.");
+    valid = false;
+    return;
+  }
 }
 
 Renderer::~Renderer()
@@ -237,6 +250,11 @@ Renderer::~Renderer()
   if (device && commandPool)
   {
     vkDestroyCommandPool(device, commandPool, nullptr);
+  }
+
+  // Clean up our images
+  for (auto& image : cudaStereoImages) {
+    cudainterop::destroyCudaVulkanImage(context, image);
   }
 }
 
@@ -401,4 +419,93 @@ VkSemaphore Renderer::getCurrentDrawableSemaphore() const
 VkSemaphore Renderer::getCurrentPresentableSemaphore() const
 {
   return renderProcesses.at(currentRenderProcessIndex)->getPresentableSemaphore();
+}
+
+void Renderer::blitCudaStereoToSwapchain(VkCommandBuffer cmd, VkImage swapchainImage, int eyeIndex)
+{
+    const auto& eyeImage = cudaStereoImages.at(eyeIndex);
+    if (!eyeImage.valid)
+        return;
+
+    // Transition eyeImage.image to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+    VkImageMemoryBarrier srcBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    srcBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    srcBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    srcBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    srcBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    srcBarrier.image = eyeImage.image;
+    srcBarrier.subresourceRange = {
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        0, 1,  // mip levels
+        0, 1   // array layers
+    };
+
+    // Transition swapchainImage to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    VkImageMemoryBarrier dstBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    dstBarrier.srcAccessMask = 0;
+    dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstBarrier.image = swapchainImage;
+    dstBarrier.subresourceRange = {
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        0, 1,  // mip levels
+        0, 1   // array layers
+    };
+
+    VkImageMemoryBarrier barriers[] = { srcBarrier, dstBarrier };
+    vkCmdPipelineBarrier(cmd,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        2, barriers);
+
+    // Perform the blit operation
+    VkImageBlit region{};
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.layerCount = 1;
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.layerCount = 1;
+
+    region.srcOffsets[0] = { 0, 0, 0 };
+    region.srcOffsets[1] = {
+        static_cast<int32_t>(eyeImage.extent.width),
+        static_cast<int32_t>(eyeImage.extent.height),
+        1
+    };
+    region.dstOffsets[0] = { 0, 0, 0 };
+    region.dstOffsets[1] = {
+        static_cast<int32_t>(eyeImage.extent.width),
+        static_cast<int32_t>(eyeImage.extent.height),
+        1
+    };
+
+    vkCmdBlitImage(cmd,
+        eyeImage.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        swapchainImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &region, VK_FILTER_LINEAR);
+
+    // Transition images back to appropriate layouts
+    srcBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    srcBarrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    srcBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    srcBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    dstBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dstBarrier.dstAccessMask = 0;
+    dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    barriers[0] = srcBarrier;
+    barriers[1] = dstBarrier;
+
+    vkCmdPipelineBarrier(cmd,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        2, barriers);
 }

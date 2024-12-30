@@ -2,3 +2,6 @@ build/
 cmake-build-debug/
 cmake-build-debug-mingw/
 cmake-build-debug-visual-studio/
+external/
+models/
+license.md

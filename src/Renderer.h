@@ -35,6 +35,9 @@ public:
   VkSemaphore getCurrentDrawableSemaphore() const;
   VkSemaphore getCurrentPresentableSemaphore() const;
 
+  // Add two fields for the stereo images
+  std::vector<cudainterop::CudaVulkanImage> cudaStereoImages;
+
 private:
   bool valid = true;
 
