@@ -24,7 +24,7 @@ class RenderProcess;
  */
 class Renderer final {
 public:
-    Renderer(const Context* context, const Headset* headset, const MeshData* meshData, const std::vector<Model*>& models);
+    Renderer(const Context* context, const Headset* headset, const MeshData* meshData);
     ~Renderer();
     void renderSolidColors(uint32_t swapchainImageIndex);
 
@@ -54,7 +54,6 @@ private:
     VkPipelineLayout pipelineLayout = nullptr;
     Pipeline *gridPipeline = nullptr, *diffusePipeline = nullptr;
     DataBuffer* vertexIndexBuffer = nullptr;
-    std::vector<Model*> models;
     size_t indexOffset = 0u;
     size_t currentRenderProcessIndex = 0u;
 };

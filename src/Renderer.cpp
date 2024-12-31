@@ -19,11 +19,9 @@ constexpr size_t framesInFlightCount = 2u;
 
 Renderer::Renderer(const Context* context,
     const Headset* headset,
-    const MeshData* meshData,
-    const std::vector<Model*>& models)
+    const MeshData* meshData)
     : context(context)
     , headset(headset)
-    , models(models)
 {
     const VkDevice device = context->getVkDevice();
 

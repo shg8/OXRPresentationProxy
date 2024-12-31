@@ -23,12 +23,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    Renderer* renderer = new Renderer(context, /*headset*/ nullptr, /*models*/ {});
-    if (!renderer->isValid()) {
-        return EXIT_FAILURE;
-    }
-
-    MirrorView mirrorView(&context);
+    MirrorView mirrorView(context);
     if (!mirrorView.isValid()) {
         return EXIT_FAILURE;
     }
@@ -37,8 +32,13 @@ int main()
         return EXIT_FAILURE;
     }
 
-    Headset headset(&context);
+    Headset headset(context);
     if (!headset.isValid()) {
+        return EXIT_FAILURE;
+    }
+
+    Renderer* renderer = new Renderer(context, &headset);
+    if (!renderer->isValid()) {
         return EXIT_FAILURE;
     }
 
