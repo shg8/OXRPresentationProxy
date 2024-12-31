@@ -70,7 +70,7 @@ int main()
         //      generateCudaImage(rightCudaArray);
 
         // 3. Upload to the Vulkan images
-        renderer->updateCudaStereoImages(/* leftCudaArray, rightCudaArray */);
+        // renderer->updateCudaStereoImages(/* leftCudaArray, rightCudaArray */);
 
         // 4. Acquire swapchain image from MirrorView, then:
         //    renderer->blitCudaStereoToSwapchain(cmd, swapchainImage, /*leftEye=*/true);

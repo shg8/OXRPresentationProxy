@@ -24,7 +24,7 @@ class RenderProcess;
  */
 class Renderer final {
 public:
-    Renderer(const Context* context, const Headset* headset, const MeshData* meshData);
+    Renderer(const Context* context, const Headset* headset);
     ~Renderer();
     void renderSolidColors(uint32_t swapchainImageIndex);
 
