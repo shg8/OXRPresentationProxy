@@ -31,8 +31,7 @@ Renderer::Renderer(const Context* context,
     commandPoolCreateInfo.queueFamilyIndex = context->getVkDrawQueueFamilyIndex();
     if (vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool) != VK_SUCCESS) {
         util::error(Error::GenericVulkan);
-        valid = false;
-        return;
+        throw std::runtime_error("Failed to create command pool");
     }
 
     // Create a render process for each frame in flight
@@ -40,8 +39,7 @@ Renderer::Renderer(const Context* context,
     for (RenderProcess*& renderProcess : renderProcesses) {
         renderProcess = new RenderProcess(context, commandPool);
         if (!renderProcess->isValid()) {
-            valid = false;
-            return;
+            throw std::runtime_error("Failed to create render process");
         }
     }
 
@@ -52,7 +50,7 @@ Renderer::Renderer(const Context* context,
             offscreenImages.at(bufferPoolIndex).at(eyeIndex) = cudainterop::createCudaVulkanImage(context, stereoSize, VK_FORMAT_R8G8B8A8_UNORM);
             if (!offscreenImages.at(bufferPoolIndex).at(eyeIndex).valid) {
                 util::error(Error::FeatureNotSupported, "Failed to create CUDA-Vulkan images.");
-                return;
+                throw std::runtime_error("Failed to create CUDA-Vulkan images.");
             }
         }
     }
@@ -71,8 +69,10 @@ Renderer::~Renderer()
     }
 
     // Clean up our images
-    for (auto& image : cudaStereoImages) {
-        cudainterop::destroyCudaVulkanImage(context, image);
+    for (auto& stereoImageSet : offscreenImages) {
+        for (auto& image : stereoImageSet) {
+            cudainterop::destroyCudaVulkanImage(context, image);
+        }
     }
 }
 
