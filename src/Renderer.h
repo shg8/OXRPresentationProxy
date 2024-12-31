@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <queue>
 #include <vector>
 
 #include "CudaInterop.h"
@@ -11,49 +12,37 @@
 class Context;
 class DataBuffer;
 class Headset;
-class MeshData;
-struct Model;
-class Pipeline;
 class RenderProcess;
 
-/*
- * The renderer class facilitates rendering with Vulkan. It is initialized with a constant list of models to render and
- * holds the vertex/index buffer, the pipelines that define the rendering techniques to use, as well as a number of
- * render processes. Note that all resources that need to be duplicated in order to be able to render several frames in
- * parallel is held by this number of render processes.
- */
+#define EYE_COUNT 2
+
 class Renderer final {
 public:
     Renderer(const Context* context, const Headset* headset);
     ~Renderer();
-    void renderSolidColors(uint32_t swapchainImageIndex);
 
-    void render(const glm::mat4& cameraMatrix, size_t swapchainImageIndex, float time);
+    void record(size_t swapchainImageIndex);
     void submit(bool useSemaphores) const;
 
-    bool isValid() const;
     VkCommandBuffer getCurrentCommandBuffer() const;
     VkSemaphore getCurrentDrawableSemaphore() const;
     VkSemaphore getCurrentPresentableSemaphore() const;
 
-    // Add two fields for the stereo images
-    std::vector<cudainterop::CudaVulkanImage> cudaStereoImages;
+    void transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int swapchainImageIndex);
 
-    void blitCudaStereoToSwapchain(VkCommandBuffer cmd, VkImage swapchainImage, int eyeIndex);
+    enum BufferPoolImageStatus {
+        FREE,
+        AVAILABLE,
+        IN_FLIGHT,
+    };
+
+    std::vector<std::array<cudainterop::CudaVulkanImage, EYE_COUNT>> offscreenImages;
 
 private:
-    bool valid = true;
-
     const Context* context = nullptr;
     const Headset* headset = nullptr;
 
     VkCommandPool commandPool = nullptr;
-    VkDescriptorPool descriptorPool = nullptr;
-    VkDescriptorSetLayout descriptorSetLayout = nullptr;
     std::vector<RenderProcess*> renderProcesses;
-    VkPipelineLayout pipelineLayout = nullptr;
-    Pipeline *gridPipeline = nullptr, *diffusePipeline = nullptr;
-    DataBuffer* vertexIndexBuffer = nullptr;
-    size_t indexOffset = 0u;
     size_t currentRenderProcessIndex = 0u;
 };

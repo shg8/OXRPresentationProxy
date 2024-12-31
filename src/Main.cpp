@@ -57,26 +57,16 @@ int main()
         const Headset::BeginFrameResult frameResult = headset.beginFrame(swapchainImageIndex);
         if (frameResult == Headset::BeginFrameResult::Error) {
             return EXIT_FAILURE;
-        } else if (frameResult == Headset::BeginFrameResult::RenderFully) {
+        } else if (frameResult == Headset::BeginFrameResult::SkipFully) {
+            continue;
         }
+
+        renderer->record(swapchainImageIndex);
+        renderer->submit(false);
 
         if (frameResult == Headset::BeginFrameResult::RenderFully || frameResult == Headset::BeginFrameResult::SkipRender) {
             headset.endFrame();
         }
-
-        // Generate stereo images using CUDA
-        // (You could do any GPU kernel: fractal, color bars, text overlay, etc.)
-        // e.g. generateCudaImage(leftCudaArray);
-        //      generateCudaImage(rightCudaArray);
-
-        // 3. Upload to the Vulkan images
-        // renderer->updateCudaStereoImages(/* leftCudaArray, rightCudaArray */);
-
-        // 4. Acquire swapchain image from MirrorView, then:
-        //    renderer->blitCudaStereoToSwapchain(cmd, swapchainImage, /*leftEye=*/true);
-        //    Or do it for each eye
-
-        // 5. Present
     }
 
     context->sync(); // Sync before destroying so that resources are free
