@@ -12,29 +12,28 @@
  * current pose of a controller, which is then used to accurately pose the hand models in the scene. It also exposes the
  * current fly speed, which is used to fly the camera in the direction of the controller.
  */
-class Controllers final
-{
+class Controllers final {
 public:
-  Controllers(XrInstance instance, XrSession session);
-  ~Controllers();
+    Controllers(XrInstance instance, XrSession session);
+    ~Controllers();
 
-  bool sync(XrSpace space, XrTime time);
+    bool sync(XrSpace space, XrTime time);
 
-  bool isValid() const;
+    bool isValid() const;
 
-  glm::mat4 getPose(size_t controllerIndex) const;
-  float getFlySpeed(size_t controllerIndex) const;
+    glm::mat4 getPose(size_t controllerIndex) const;
+    float getFlySpeed(size_t controllerIndex) const;
 
 private:
-  bool valid = true;
+    bool valid = true;
 
-  XrSession session = nullptr;
-  std::vector<XrPath> paths;
-  std::vector<XrSpace> spaces;
+    XrSession session = nullptr;
+    std::vector<XrPath> paths;
+    std::vector<XrSpace> spaces;
 
-  std::vector<glm::mat4> poses;
-  std::vector<float> flySpeeds;
+    std::vector<glm::mat4> poses;
+    std::vector<float> flySpeeds;
 
-  XrActionSet actionSet = nullptr;
-  XrAction poseAction = nullptr, flyAction = nullptr;
+    XrActionSet actionSet = nullptr;
+    XrAction poseAction = nullptr, flyAction = nullptr;
 };

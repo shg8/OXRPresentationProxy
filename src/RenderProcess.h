@@ -17,49 +17,45 @@ class DataBuffer;
  * duplication, the application can be sure that one frame does not modify a resource that is still in use by another
  * simultaneous frame.
  */
-class RenderProcess final
-{
+class RenderProcess final {
 public:
-  RenderProcess(const Context* context,
-                VkCommandPool commandPool,
-                VkDescriptorPool descriptorPool,
-                VkDescriptorSetLayout descriptorSetLayout,
-                size_t modelCount);
-  ~RenderProcess();
+    RenderProcess(const Context* context,
+        VkCommandPool commandPool,
+        VkDescriptorPool descriptorPool,
+        VkDescriptorSetLayout descriptorSetLayout,
+        size_t modelCount);
+    ~RenderProcess();
 
-  struct DynamicVertexUniformData
-  {
-    glm::mat4 worldMatrix;
-  };
-  std::vector<DynamicVertexUniformData> dynamicVertexUniformData;
+    struct DynamicVertexUniformData {
+        glm::mat4 worldMatrix;
+    };
+    std::vector<DynamicVertexUniformData> dynamicVertexUniformData;
 
-  struct StaticVertexUniformData
-  {
-    std::array<glm::mat4, 2u> viewProjectionMatrices; // 0 = left eye, 1 = right eye
-  } staticVertexUniformData;
+    struct StaticVertexUniformData {
+        std::array<glm::mat4, 2u> viewProjectionMatrices; // 0 = left eye, 1 = right eye
+    } staticVertexUniformData;
 
-  struct StaticFragmentUniformData
-  {
-    float time;
-  } staticFragmentUniformData;
+    struct StaticFragmentUniformData {
+        float time;
+    } staticFragmentUniformData;
 
-  bool isValid() const;
-  VkCommandBuffer getCommandBuffer() const;
-  VkSemaphore getDrawableSemaphore() const;
-  VkSemaphore getPresentableSemaphore() const;
-  VkFence getBusyFence() const;
-  VkDescriptorSet getDescriptorSet() const;
+    bool isValid() const;
+    VkCommandBuffer getCommandBuffer() const;
+    VkSemaphore getDrawableSemaphore() const;
+    VkSemaphore getPresentableSemaphore() const;
+    VkFence getBusyFence() const;
+    VkDescriptorSet getDescriptorSet() const;
 
-  void updateUniformBufferData() const;
+    void updateUniformBufferData() const;
 
 private:
-  bool valid = true;
+    bool valid = true;
 
-  const Context* context = nullptr;
-  VkCommandBuffer commandBuffer = nullptr;
-  VkSemaphore drawableSemaphore = nullptr, presentableSemaphore = nullptr;
-  VkFence busyFence = nullptr;
-  DataBuffer* uniformBuffer = nullptr;
-  void* uniformBufferMemory = nullptr;
-  VkDescriptorSet descriptorSet = nullptr;
+    const Context* context = nullptr;
+    VkCommandBuffer commandBuffer = nullptr;
+    VkSemaphore drawableSemaphore = nullptr, presentableSemaphore = nullptr;
+    VkFence busyFence = nullptr;
+    DataBuffer* uniformBuffer = nullptr;
+    void* uniformBufferMemory = nullptr;
+    VkDescriptorSet descriptorSet = nullptr;
 };

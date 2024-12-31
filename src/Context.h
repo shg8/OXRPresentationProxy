@@ -11,58 +11,57 @@
  * the preprocessor macro DEBUG is defined. This enables console output that is crucial to finding potential issues in
  * OpenXR or Vulkan.
  */
-class Context final
-{
+class Context final {
 public:
-  Context();
-  ~Context();
+    Context();
+    ~Context();
 
-  bool createDevice(VkSurfaceKHR mirrorSurface);
-  void sync() const;
+    bool createDevice(VkSurfaceKHR mirrorSurface);
+    void sync() const;
 
-  bool isValid() const;
+    bool isValid() const;
 
-  XrViewConfigurationType getXrViewType() const;
-  XrInstance getXrInstance() const;
-  XrSystemId getXrSystemId() const;
+    XrViewConfigurationType getXrViewType() const;
+    XrInstance getXrInstance() const;
+    XrSystemId getXrSystemId() const;
 
-  VkInstance getVkInstance() const;
-  VkPhysicalDevice getVkPhysicalDevice() const;
-  uint32_t getVkDrawQueueFamilyIndex() const;
-  VkDevice getVkDevice() const;
-  VkQueue getVkDrawQueue() const;
-  VkQueue getVkPresentQueue() const;
+    VkInstance getVkInstance() const;
+    VkPhysicalDevice getVkPhysicalDevice() const;
+    uint32_t getVkDrawQueueFamilyIndex() const;
+    VkDevice getVkDevice() const;
+    VkQueue getVkDrawQueue() const;
+    VkQueue getVkPresentQueue() const;
 
-  VkDeviceSize getUniformBufferOffsetAlignment() const;
-  VkSampleCountFlagBits getMultisampleCount() const;
+    VkDeviceSize getUniformBufferOffsetAlignment() const;
+    VkSampleCountFlagBits getMultisampleCount() const;
 
 private:
-  bool valid = true;
+    bool valid = true;
 
-  // Extension function pointers
-  PFN_xrGetVulkanInstanceExtensionsKHR xrGetVulkanInstanceExtensionsKHR = nullptr;
-  PFN_xrGetVulkanGraphicsDeviceKHR xrGetVulkanGraphicsDeviceKHR = nullptr;
-  PFN_xrGetVulkanDeviceExtensionsKHR xrGetVulkanDeviceExtensionsKHR = nullptr;
-  PFN_xrGetVulkanGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR = nullptr;
+    // Extension function pointers
+    PFN_xrGetVulkanInstanceExtensionsKHR xrGetVulkanInstanceExtensionsKHR = nullptr;
+    PFN_xrGetVulkanGraphicsDeviceKHR xrGetVulkanGraphicsDeviceKHR = nullptr;
+    PFN_xrGetVulkanDeviceExtensionsKHR xrGetVulkanDeviceExtensionsKHR = nullptr;
+    PFN_xrGetVulkanGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR = nullptr;
 
-  XrInstance xrInstance = nullptr;
-  XrSystemId systemId = 0u;
+    XrInstance xrInstance = nullptr;
+    XrSystemId systemId = 0u;
 
-  VkInstance vkInstance = nullptr;
-  VkPhysicalDevice physicalDevice = nullptr;
-  uint32_t drawQueueFamilyIndex = 0u, presentQueueFamilyIndex = 0u;
-  VkDevice device = nullptr;
-  VkQueue drawQueue = nullptr, presentQueue = nullptr;
-  VkDeviceSize uniformBufferOffsetAlignment = 0u;
-  VkSampleCountFlagBits multisampleCount = VK_SAMPLE_COUNT_1_BIT;
+    VkInstance vkInstance = nullptr;
+    VkPhysicalDevice physicalDevice = nullptr;
+    uint32_t drawQueueFamilyIndex = 0u, presentQueueFamilyIndex = 0u;
+    VkDevice device = nullptr;
+    VkQueue drawQueue = nullptr, presentQueue = nullptr;
+    VkDeviceSize uniformBufferOffsetAlignment = 0u;
+    VkSampleCountFlagBits multisampleCount = VK_SAMPLE_COUNT_1_BIT;
 
 #ifdef DEBUG
-  PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT = nullptr;
-  PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT = nullptr;
-  XrDebugUtilsMessengerEXT xrDebugUtilsMessenger = nullptr;
+    PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_xrDestroyDebugUtilsMessengerEXT xrDestroyDebugUtilsMessengerEXT = nullptr;
+    XrDebugUtilsMessengerEXT xrDebugUtilsMessenger = nullptr;
 
-  PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-  PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
-  VkDebugUtilsMessengerEXT vkDebugUtilsMessenger = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+    VkDebugUtilsMessengerEXT vkDebugUtilsMessenger = nullptr;
 #endif
 };
