@@ -49,7 +49,8 @@ set(SRC
         Util.cpp
         Util.h
 
-        ${SHADER_SRC}
+        CudaInterop.cpp
+        CudaInterop.h
 )
 
 find_package(CUDAToolkit REQUIRED)

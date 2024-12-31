@@ -37,8 +37,10 @@ int main()
         return EXIT_FAILURE;
     }
 
-    Renderer* renderer = new Renderer(context, &headset);
-    if (!renderer->isValid()) {
+    Renderer* renderer;
+    try {
+        renderer = new Renderer(context, &headset);
+    } catch (...) {
         return EXIT_FAILURE;
     }
 

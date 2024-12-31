@@ -12,14 +12,13 @@
 #include "Util.h"
 
 #include <array>
+#include <stdexcept>
 
 namespace {
 constexpr size_t framesInFlightCount = 2u;
 } // namespace
 
-Renderer::Renderer(const Context* context,
-    const Headset* headset,
-    const MeshData* meshData)
+Renderer::Renderer(const Context* context, const Headset* headset)
     : context(context)
     , headset(headset)
 {
@@ -150,7 +149,7 @@ VkSemaphore Renderer::getCurrentPresentableSemaphore() const
 
 void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int swapchainImageIndex)
 {
-    const auto& stereoImageSet = bufferPool.at(bufferPoolIndex);
+    const auto& stereoImageSet = offscreenImages.at(bufferPoolIndex);
     const auto& swapchainImage = headset->getRenderTarget(swapchainImageIndex)->getImage();
 
     for (size_t eyeIndex = 0u; eyeIndex < EYE_COUNT; ++eyeIndex) {
@@ -166,7 +165,7 @@ void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int
         srcBarrier.subresourceRange = {
             VK_IMAGE_ASPECT_COLOR_BIT,
             0, 1, // mip levels
-            eyeIndex, 1 // array layers
+            0, 1 // array layers
         };
 
         // Transition swapchainImage to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -179,7 +178,7 @@ void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int
         dstBarrier.subresourceRange = {
             VK_IMAGE_ASPECT_COLOR_BIT,
             0, 1, // mip levels
-            eyeIndex, 1 // array layers
+            static_cast<uint32_t>(eyeIndex), 1 // array layers
         };
 
         VkImageMemoryBarrier barriers[] = { srcBarrier, dstBarrier };
