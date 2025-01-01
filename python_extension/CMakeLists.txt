@@ -75,7 +75,7 @@ if (MSVC)
                       $<TARGET_FILE_DIR:OXRPresentationPython>)
 endif (MSVC)
 
-find_library(TORCH_PYTHON_LIBRARY torch_python PATHS "${TORCH_INSTALL_ROOT}/lib")
+find_library(TORCH_PYTHON_LIBRARY torch_python PATHS "${TORCH_INSTALL_PREFIX}/lib")
 target_link_libraries(OXRPresentationPython PRIVATE ${TORCH_PYTHON_LIBRARY})
 
 # Copy shared library binaries on Windows
