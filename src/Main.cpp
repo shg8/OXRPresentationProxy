@@ -44,6 +44,10 @@ int main()
         return EXIT_FAILURE;
     }
 
+    if (!mirrorView.connect(&headset, renderer)) {
+        return EXIT_FAILURE;
+    }
+
     // Main loop
     std::chrono::high_resolution_clock::time_point previousTime = std::chrono::high_resolution_clock::now();
     while (!headset.isExitRequested() && !mirrorView.isExitRequested()) {
@@ -67,12 +71,17 @@ int main()
         renderer->record(swapchainImageIndex);
 
         // Add mirror view rendering
-        if (auto result = mirrorView.render(swapchainImageIndex); result == MirrorView::RenderResult::Error) {
+        MirrorView::RenderResult mirrorResult = mirrorView.render(swapchainImageIndex);
+        if (mirrorResult == MirrorView::RenderResult::Error) {
             return EXIT_FAILURE;
-        } else if (result == MirrorView::RenderResult::Visible) {
+        }
+
+        const bool mirrorViewVisible = (mirrorResult == MirrorView::RenderResult::Visible);
+
+        renderer->submit(mirrorViewVisible);
+        if (mirrorViewVisible) {
             mirrorView.present();
         }
-        renderer->submit(true);
 
         if (frameResult == Headset::BeginFrameResult::RenderFully || frameResult == Headset::BeginFrameResult::SkipRender) {
             headset.endFrame();
