@@ -569,3 +569,8 @@ bool Headset::endSession() const
 
     return true;
 }
+
+size_t Headset::getSwapchainImageCount() const
+{
+    return swapchainRenderTargets.size();
+}

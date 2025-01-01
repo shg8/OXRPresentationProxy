@@ -48,6 +48,8 @@ public:
 
     RenderTarget* getRenderTarget(size_t swapchainImageIndex) const;
 
+    size_t getSwapchainImageCount() const;
+
 private:
     bool valid = true;
     bool exitRequested = false;
