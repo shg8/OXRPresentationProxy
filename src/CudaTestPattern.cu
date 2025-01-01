@@ -27,7 +27,7 @@ __global__ void testPatternKernel(cudaSurfaceObject_t surface, uint32_t width, u
     );
     
     // Write to surface
-    surf2Dwrite(pixel, surface, x * sizeof(uchar4), y);
+    surf2Dwrite(pixel, surface, x, y);
 }
 
 } // namespace
