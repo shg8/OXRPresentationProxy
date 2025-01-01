@@ -5,6 +5,14 @@ add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 cmake_minimum_required(VERSION 3.18)
 project(${PROJECT_NAME} LANGUAGES CXX CUDA)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(CUDAToolkit REQUIRED)
+enable_language(CUDA)
+
+include(FindVulkan)
+
 # Add pybind11
 include(FetchContent)
 FetchContent_Declare(
@@ -16,12 +24,20 @@ FetchContent_MakeAvailable(pybind11)
 
 # Find required packages
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
-find_package(Vulkan REQUIRED)
-find_package(Torch REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
+    message("libtorch workaround")
+    add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
+    # ensure that PyTorch is told to use NVTX3 headers
+    target_compile_definitions(
+            CUDA::nvToolsExt INTERFACE
+            TORCH_CUDA_USE_NVTX3
+    )
+    target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
+endif()
+
+find_package(Torch CONFIG)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Create Python extension module
 add_library(OXRPresentationPython MODULE
@@ -35,12 +51,16 @@ set_target_properties(OXRPresentationPython PROPERTIES
     CXX_STANDARD 17  # PyTorch requires C++17
 )
 
+target_include_directories(OXRPresentationPython PRIVATE ${Vulkan_INCLUDE_DIRS} ${CUDAToolkit_INCLUDE_DIRS})
+
 # Link dependencies
 target_link_libraries(OXRPresentationPython PRIVATE
     pybind11::module
     ${PROJECT_NAME}  # Link against main project
     CUDA::cudart
     "${TORCH_LIBRARIES}"
+    ${Vulkan_LIBRARIES}
+    glfw glm openxr
 )
 
 # Copy PyTorch DLLs on Windows

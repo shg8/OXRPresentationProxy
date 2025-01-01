@@ -55,9 +55,6 @@ set(CUDA_SRC
         CudaTestPattern.cu
 )
 
-find_package(CUDAToolkit REQUIRED)
-enable_language(CUDA)
-
 # Set CUDA architectures if not already set
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES native)
