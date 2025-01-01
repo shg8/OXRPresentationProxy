@@ -6,6 +6,8 @@
 #include "Renderer.h"
 #include "Util.h"
 
+#include <array>
+
 #include <glfw/glfw3.h>
 
 #include <glm/common.hpp>
@@ -152,7 +154,7 @@ MirrorView::RenderResult MirrorView::render(uint32_t swapchainImageIndex)
         sourceImage = headset->getRenderTarget(swapchainImageIndex)->getImage();
         eyeResolution = headset->getEyeResolution(mirrorEyeIndex);
     } else {
-        const auto& images = renderer->getOffscreenImages();
+        const auto& images = renderer->offscreenImages.at(renderer->currentRenderProcessIndex);
         sourceImage = images.at(mirrorEyeIndex).image;
         eyeResolution = images.at(mirrorEyeIndex).extent;
         baseArrayLayer = 0;
