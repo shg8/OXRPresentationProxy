@@ -48,6 +48,8 @@ int main()
         return EXIT_FAILURE;
     }
 
+    bool enableMirrorView = false;
+
     // Main loop
     std::chrono::high_resolution_clock::time_point previousTime = std::chrono::high_resolution_clock::now();
     while (!headset.isExitRequested() && !mirrorView.isExitRequested()) {
@@ -71,9 +73,12 @@ int main()
         renderer->record(swapchainImageIndex);
 
         // Add mirror view rendering
-        MirrorView::RenderResult mirrorResult = mirrorView.render(swapchainImageIndex);
-        if (mirrorResult == MirrorView::RenderResult::Error) {
-            return EXIT_FAILURE;
+        MirrorView::RenderResult mirrorResult;
+        if (enableMirrorView) {
+            mirrorResult = mirrorView.render(swapchainImageIndex);
+            if (mirrorResult == MirrorView::RenderResult::Error) {
+                return EXIT_FAILURE;
+            }
         }
 
         const bool mirrorViewVisible = (mirrorResult == MirrorView::RenderResult::Visible);
