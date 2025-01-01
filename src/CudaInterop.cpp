@@ -166,14 +166,14 @@ namespace cudainterop
             throw std::runtime_error("Failed to create image view for CUDA interop");
         }
 
+        result.valid = true;
+
         // 6. Import the memory into CUDA
         if (!importVulkanMemoryToCuda(result, format, {size.width, size.height, 1}, memReqs.size)) {
             util::error(Error::FeatureNotSupported, "Failed to import Vulkan memory to CUDA");
             throw std::runtime_error("Failed to import Vulkan memory to CUDA");
         }
-
-        // Everything succeeded
-        result.valid = true;
+        
         return result;
     }
 
