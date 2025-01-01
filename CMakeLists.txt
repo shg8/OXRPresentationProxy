@@ -14,10 +14,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-# Find Python
+# Find required packages
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
-
-include(FindVulkan)
+find_package(Vulkan REQUIRED)
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,6 +32,7 @@ add_library(OXRPresentationPython MODULE
 set_target_properties(OXRPresentationPython PROPERTIES
     PREFIX ""
     SUFFIX ".so"
+    CXX_STANDARD 17  # PyTorch requires C++17
 )
 
 # Link dependencies
@@ -38,7 +40,18 @@ target_link_libraries(OXRPresentationPython PRIVATE
     pybind11::module
     ${PROJECT_NAME}  # Link against main project
     CUDA::cudart
+    "${TORCH_LIBRARIES}"
 )
+
+# Copy PyTorch DLLs on Windows
+if (MSVC)
+    file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+    add_custom_command(TARGET OXRPresentationPython
+                      POST_BUILD
+                      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                      ${TORCH_DLLS}
+                      $<TARGET_FILE_DIR:OXRPresentationPython>)
+endif (MSVC)
 
 add_subdirectory(external)
 add_subdirectory(src)
