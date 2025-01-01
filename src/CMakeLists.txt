@@ -1,4 +1,4 @@
-set(TARGET_NAME openxr-vulkan-example)
+set(TARGET_NAME OXRPresentationProxy)
 
 set(SHADER_SRC
 

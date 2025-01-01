@@ -45,4 +45,10 @@ bool importVulkanMemoryToCuda(CudaVulkanImage& image,
     VkExtent2D extent,
     VkDeviceSize memorySize);
 
+// Copy from a CUDA device pointer to a CudaVulkanImage
+cudaError_t copyFromDevicePointerToCudaImage(CudaVulkanImage& image,
+    const void* devicePtr,
+    size_t devicePitch,
+    VkExtent2D size);
+
 } // namespace cudainterop
