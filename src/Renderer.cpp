@@ -156,7 +156,7 @@ void Renderer::record(size_t swapchainImageIndex)
         return;
     }
 
-    transferToSwapchain(commandBuffer, swapchainImageIndex, swapchainImageIndex);
+    transferToSwapchain(commandBuffer, currentRenderProcessIndex, swapchainImageIndex);
 }
 
 void Renderer::submit(bool useSemaphores) const
