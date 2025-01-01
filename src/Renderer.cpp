@@ -68,6 +68,7 @@ Renderer::Renderer(const Context* context, const Headset* headset)
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
+    // Transition offscreen images to general layout
     for (auto& stereoImageSet : offscreenImages) {
         for (auto& image : stereoImageSet) {
             VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
@@ -90,6 +91,30 @@ Renderer::Renderer(const Context* context, const Headset* headset)
                 0, nullptr,
                 1, &barrier);
         }
+    }
+
+    // Transition swapchain images to transfer dst optimal
+    for (size_t i = 0; i < headset->getSwapchainImageCount(); i++) {
+        const auto& swapchainImage = headset->getRenderTarget(i)->getImage();
+        VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = swapchainImage;
+        barrier.subresourceRange = {
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            0, 1,  // mip levels
+            0, EYE_COUNT   // array layers
+        };
+
+        vkCmdPipelineBarrier(cmdBuffer,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
     }
 
     vkEndCommandBuffer(cmdBuffer);
@@ -139,9 +164,15 @@ void Renderer::record(size_t swapchainImageIndex)
     currentRenderProcessIndex = (currentRenderProcessIndex + 1u) % renderProcesses.size();
 
     RenderProcess* renderProcess = renderProcesses.at(currentRenderProcessIndex);
-
+    const VkDevice device = context->getVkDevice();
     const VkFence busyFence = renderProcess->getBusyFence();
-    if (vkResetFences(context->getVkDevice(), 1u, &busyFence) != VK_SUCCESS) {
+
+    // Wait for the previous frame using this render process to complete
+    if (vkWaitForFences(device, 1, &busyFence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+        return;
+    }
+
+    if (vkResetFences(device, 1u, &busyFence) != VK_SUCCESS) {
         return;
     }
 
