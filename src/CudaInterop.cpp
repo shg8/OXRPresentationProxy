@@ -26,8 +26,11 @@ namespace cudainterop
         
         // 1. Create the image with external memory flags
         VkExternalMemoryImageCreateInfo extImageInfo{VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
-        extImageInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT |  // For Linux
-                                  VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;  // For Windows
+#ifdef _WIN32
+        extImageInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;  // Windows only
+#else
+        extImageInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;     // Linux only
+#endif
         
         VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         imageInfo.pNext = &extImageInfo;
@@ -54,8 +57,11 @@ namespace cudainterop
         vkGetImageMemoryRequirements(device, result.image, &memReqs);
 
         VkExportMemoryAllocateInfo exportAllocInfo{VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO};
-        exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT |
-                                     VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#ifdef _WIN32
+        exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;  // Windows only
+#else
+        exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;     // Linux only
+#endif
 
         VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         allocInfo.pNext = &exportAllocInfo;
