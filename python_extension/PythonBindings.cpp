@@ -112,8 +112,8 @@ py::dict startFrame() {
 
         // Add to return dictionary
         std::string eyePrefix = (eyeIndex == 0) ? "left_" : "right_";
-        frameInfo[eyePrefix + "view_matrix"].cast() = viewArray;
-        frameInfo[eyePrefix + "projection_matrix"].cast() = projArray;
+        frameInfo[py::str(eyePrefix + "view_matrix")] = viewArray;
+        frameInfo[py::str(eyePrefix + "projection_matrix")] = projArray;
     }
 
     return frameInfo;
@@ -127,11 +127,11 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
 
     // Verify tensor properties
     auto verifyTensor = [](const py::object& tensor, cudainterop::CudaVulkanImage& targetImage) {
-        if (!torch::jit::is_tensor(tensor.ptr())) {
+        if (!py::isinstance<torch::Tensor>(tensor)) {
             throw std::runtime_error("Input must be a torch tensor");
         }
         
-        auto t = torch::from_blob(tensor.ptr());
+        auto t = tensor.cast<torch::Tensor>();
         if (t.device().type() != torch::kCUDA) {
             throw std::runtime_error("Tensor must be on CUDA device");
         }
@@ -155,7 +155,7 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
 
     // Copy data from tensors to CUDA surfaces
     auto copyTensorToImage = [](const py::object& tensor, cudainterop::CudaVulkanImage& image) {
-        auto t = torch::from_blob(tensor.ptr());
+        auto t = tensor.cast<torch::Tensor>();
         void* tensorData = t.data_ptr();
         
         // Get tensor properties
