@@ -167,7 +167,7 @@ namespace cudainterop
         }
 
         // 6. Import the memory into CUDA
-        if (!importVulkanMemoryToCuda(result, format, {size.width, size.height, 1})) {
+        if (!importVulkanMemoryToCuda(result, format, {size.width, size.height, 1}, memReqs.size)) {
             util::error(Error::FeatureNotSupported, "Failed to import Vulkan memory to CUDA");
             throw std::runtime_error("Failed to import Vulkan memory to CUDA");
         }
@@ -177,8 +177,13 @@ namespace cudainterop
         return result;
     }
 
-    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent3D extent)
+    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent3D extent, VkDeviceSize memorySize)
     {
+        if (!image.valid) {
+            util::error(Error::GenericVulkan, "Invalid image");
+            return false;
+        }
+
         // Set up the external memory handle descriptor
         cudaExternalMemoryHandleDesc memHandleDesc = {};
 #ifdef _WIN32
@@ -188,7 +193,7 @@ namespace cudainterop
         memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueFd;
         memHandleDesc.handle.fd = image.memoryFd;
 #endif
-        memHandleDesc.size = extent.width * extent.height * 4; // RGBA8 format
+        memHandleDesc.size = memorySize;  // Use exact memory size from Vulkan
         memHandleDesc.flags = cudaExternalMemoryDedicated;
 
         // Import the external memory

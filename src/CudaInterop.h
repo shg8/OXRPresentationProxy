@@ -42,6 +42,7 @@ void destroyCudaVulkanImage(const Context* context, CudaVulkanImage& image);
 // Import and map the Vulkan memory into CUDA
 bool importVulkanMemoryToCuda(CudaVulkanImage& image,
     VkFormat format,
-    VkExtent3D extent);
+    VkExtent3D extent,
+    VkDeviceSize memorySize);
 
 } // namespace cudainterop
