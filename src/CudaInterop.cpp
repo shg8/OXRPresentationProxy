@@ -189,7 +189,7 @@ namespace cudainterop
         memHandleDesc.handle.fd = image.memoryFd;
 #endif
         memHandleDesc.size = extent.width * extent.height * 4; // RGBA8 format
-        memHandleDesc.flags = 0;
+        memHandleDesc.flags = cudaExternalMemoryDedicated;
 
         // Import the external memory
         cudaError_t result = cudaImportExternalMemory(&image.cudaExtMem, &memHandleDesc);
@@ -203,7 +203,7 @@ namespace cudainterop
         mipmapDesc.offset = 0;
         mipmapDesc.formatDesc = cudaCreateChannelDesc(8, 8, 8, 8, cudaChannelFormatKindUnsigned);
         mipmapDesc.extent = make_cudaExtent(extent.width, extent.height, 0);
-        mipmapDesc.flags = cudaArraySurfaceLoadStore;
+        mipmapDesc.flags = cudaArrayColorAttachment;  // This flag is needed for Vulkan interop
         mipmapDesc.numLevels = 1;
 
         // Get the CUDA mipmapped array from the external memory
