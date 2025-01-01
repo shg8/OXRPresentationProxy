@@ -8,6 +8,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
+execute_process(
+        COMMAND "${Python3_EXECUTABLE}" "-c" "import torch;print(torch.utils.cmake_prefix_path)"
+        OUTPUT_VARIABLE PT_CMAKE_PREFIX
+        COMMAND_ECHO STDOUT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+)
+
 if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
     message("libtorch workaround")
     add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
@@ -43,7 +52,7 @@ pybind11_add_module(OXRPresentationPython
 # Configure the Python extension
 set_target_properties(OXRPresentationPython PROPERTIES
     PREFIX ""
-    SUFFIX ".so"
+    SUFFIX ".dll"
     CXX_STANDARD 17  # PyTorch requires C++17
 )
 

@@ -62,7 +62,7 @@ py::dict initialize() {
     }
 
     // Get swapchain extent and return it
-    VkExtent2D extent = g_headset->getSwapchainExtent();
+    VkExtent2D extent = g_headset->getEyeResolution(0);
     py::dict result;
     result["width"] = extent.width;
     result["height"] = extent.height;
