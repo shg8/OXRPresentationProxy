@@ -59,7 +59,7 @@ private:
     uint32_t destinationImageIndex = 0u;
     bool resizeDetected = false;
 
-    Source source = Source::RenderTarget;
+    Source source = Source::OffscreenBuffer;
 
     bool recreateSwapchain();
 };
