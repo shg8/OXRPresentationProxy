@@ -41,7 +41,7 @@ public:
 
     std::vector<std::array<cudainterop::CudaVulkanImage, EYE_COUNT>> offscreenImages;
 
-    const cudainterop::CudaVulkanImage& getOffscreenImage(size_t eyeIndex) const { return offscreenImages.at(currentRenderProcessIndex).at(eyeIndex); }
+    const std::array<cudainterop::CudaVulkanImage, EYE_COUNT>& getOffscreenImages() const { return offscreenImages.at(currentRenderProcessIndex); }
 
 private:
     const Context* context = nullptr;

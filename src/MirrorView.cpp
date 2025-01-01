@@ -152,8 +152,9 @@ MirrorView::RenderResult MirrorView::render(uint32_t swapchainImageIndex)
         sourceImage = headset->getRenderTarget(swapchainImageIndex)->getImage();
         eyeResolution = headset->getEyeResolution(mirrorEyeIndex);
     } else {
-        sourceImage = renderer->getOffscreenImage(mirrorEyeIndex).image;
-        eyeResolution = renderer->getOffscreenImage(mirrorEyeIndex).extent;
+        const auto& images = renderer->getOffscreenImages();
+        sourceImage = images[mirrorEyeIndex].image;
+        eyeResolution = images[mirrorEyeIndex].extent;
         baseArrayLayer = 0;
     }
 
