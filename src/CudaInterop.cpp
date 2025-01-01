@@ -173,7 +173,7 @@ namespace cudainterop
             util::error(Error::FeatureNotSupported, "Failed to import Vulkan memory to CUDA");
             throw std::runtime_error("Failed to import Vulkan memory to CUDA");
         }
-        
+
         return result;
     }
 
@@ -208,7 +208,7 @@ namespace cudainterop
         mipmapDesc.offset = 0;
         mipmapDesc.formatDesc = cudaCreateChannelDesc(8, 8, 8, 8, cudaChannelFormatKindUnsigned);
         mipmapDesc.extent = make_cudaExtent(extent.width, extent.height, 0);
-        mipmapDesc.flags = cudaArrayColorAttachment;  // This flag is needed for Vulkan interop
+        mipmapDesc.flags = 0;
         mipmapDesc.numLevels = 1;
 
         // Get the CUDA mipmapped array from the external memory
