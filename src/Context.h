@@ -35,6 +35,10 @@ public:
     VkDeviceSize getUniformBufferOffsetAlignment() const;
     VkSampleCountFlagBits getMultisampleCount() const;
 
+#ifdef DEBUG
+    void setDebugName(VkObjectType objectType, uint64_t objectHandle, const char* name) const;
+#endif
+
 private:
     bool valid = true;
 
@@ -63,5 +67,6 @@ private:
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
     PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
     VkDebugUtilsMessengerEXT vkDebugUtilsMessenger = nullptr;
+    PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = nullptr;
 #endif
 };

@@ -388,6 +388,14 @@ Context::Context()
             return;
         }
 
+        vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+            util::loadVkExtensionFunction(vkInstance, "vkSetDebugUtilsObjectNameEXT"));
+        if (!vkSetDebugUtilsObjectNameEXT) {
+            util::error(Error::FeatureNotSupported, "Vulkan extension function \"vkSetDebugUtilsObjectNameEXT\"");
+            valid = false;
+            return;
+        }
+
         constexpr VkDebugUtilsMessageTypeFlagsEXT typeFlags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
         constexpr XrDebugUtilsMessageSeverityFlagsEXT severityFlags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -749,3 +757,16 @@ VkSampleCountFlagBits Context::getMultisampleCount() const
 {
     return multisampleCount;
 }
+
+#ifdef DEBUG
+void Context::setDebugName(VkObjectType objectType, uint64_t objectHandle, const char* name) const
+{
+    if (vkSetDebugUtilsObjectNameEXT && name) {
+        VkDebugUtilsObjectNameInfoEXT nameInfo { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.objectType = objectType;
+        nameInfo.objectHandle = objectHandle;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+    }
+}
+#endif

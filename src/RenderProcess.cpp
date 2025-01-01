@@ -30,11 +30,19 @@ RenderProcess::RenderProcess(const Context* context, VkCommandPool commandPool)
         return;
     }
 
+#ifdef DEBUG
+    context->setDebugName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)drawableSemaphore, "Drawable Semaphore");
+#endif
+
     if (vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentableSemaphore) != VK_SUCCESS) {
         util::error(Error::GenericVulkan);
         valid = false;
         return;
     }
+
+#ifdef DEBUG
+    context->setDebugName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)presentableSemaphore, "Presentable Semaphore");
+#endif
 
     // Create a memory fence
     VkFenceCreateInfo fenceCreateInfo { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
