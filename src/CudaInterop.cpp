@@ -167,7 +167,7 @@ namespace cudainterop
         }
 
         // 6. Import the memory into CUDA
-        if (!importVulkanMemoryToCuda(result, memReqs.size)) {
+        if (!importVulkanMemoryToCuda(result, format, {size.width, size.height, 1})) {
             util::error(Error::FeatureNotSupported, "Failed to import Vulkan memory to CUDA");
             throw std::runtime_error("Failed to import Vulkan memory to CUDA");
         }
@@ -177,7 +177,7 @@ namespace cudainterop
         return result;
     }
 
-    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkDeviceSize size)
+    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent3D extent)
     {
         if (!image.valid) {
             util::error(Error::GenericVulkan, "Invalid image");
@@ -193,7 +193,7 @@ namespace cudainterop
         memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueFd;
         memHandleDesc.handle.fd = image.memoryFd;
 #endif
-        memHandleDesc.size = size;
+        memHandleDesc.size = extent.width * extent.height * 4; // RGBA8 format
         memHandleDesc.flags = 0;
 
         // Import the external memory
@@ -203,18 +203,49 @@ namespace cudainterop
             return false;
         }
 
-        // Map the external memory to a device pointer
-        cudaExternalMemoryBufferDesc bufferDesc = {};
-        bufferDesc.offset = 0;
-        bufferDesc.size = size;
-        bufferDesc.flags = 0;
+        // Set up the mipmapped array descriptor
+        cudaExternalMemoryMipmappedArrayDesc mipmapDesc = {};
+        mipmapDesc.offset = 0;
+        mipmapDesc.formatDesc = cudaCreateChannelDesc(8, 8, 8, 8, cudaChannelFormatKindUnsigned);
+        mipmapDesc.extent = make_cudaExtent(extent.width, extent.height, 0);
+        mipmapDesc.flags = cudaArraySurfaceLoadStore;
+        mipmapDesc.numLevels = 1;
 
-        result = cudaExternalMemoryGetMappedBuffer(&image.cudaDevPtr, 
-                                                 image.cudaExtMem,
-                                                 &bufferDesc);
+        // Get the CUDA mipmapped array from the external memory
+        result = cudaExternalMemoryGetMappedMipmappedArray(&image.cudaMipArray, 
+                                                          image.cudaExtMem,
+                                                          &mipmapDesc);
         if (result != cudaSuccess) {
-            util::error(Error::GenericVulkan, "Failed to map external memory to CUDA pointer");
+            util::error(Error::GenericVulkan, "Failed to get mapped mipmapped array");
             cudaDestroyExternalMemory(image.cudaExtMem);
+            image.cudaExtMem = nullptr;
+            return false;
+        }
+
+        // Get the array for level 0 (we only have one level)
+        result = cudaGetMipmappedArrayLevel(&image.cudaArray, image.cudaMipArray, 0);
+        if (result != cudaSuccess) {
+            util::error(Error::GenericVulkan, "Failed to get array level");
+            cudaFreeMipmappedArray(image.cudaMipArray);
+            cudaDestroyExternalMemory(image.cudaExtMem);
+            image.cudaMipArray = nullptr;
+            image.cudaExtMem = nullptr;
+            return false;
+        }
+
+        // Create surface object
+        cudaResourceDesc resDesc = {};
+        resDesc.resType = cudaResourceTypeArray;
+        resDesc.res.array.array = image.cudaArray;
+
+        result = cudaCreateSurfaceObject(&image.cudaSurface, &resDesc);
+        if (result != cudaSuccess) {
+            util::error(Error::GenericVulkan, "Failed to create surface object");
+            cudaFreeArray(image.cudaArray);
+            cudaFreeMipmappedArray(image.cudaMipArray);
+            cudaDestroyExternalMemory(image.cudaExtMem);
+            image.cudaArray = nullptr;
+            image.cudaMipArray = nullptr;
             image.cudaExtMem = nullptr;
             return false;
         }

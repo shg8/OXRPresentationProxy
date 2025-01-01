@@ -1,9 +1,10 @@
 #include "CudaTestPattern.h"
 #include <cuda_runtime.h>
+#include <surface_functions.h>
 
 namespace {
 
-__global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t height, size_t pitch, uint32_t frameNumber) {
+__global__ void testPatternKernel(cudaSurfaceObject_t surface, uint32_t width, uint32_t height, uint32_t frameNumber) {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     
@@ -18,24 +19,23 @@ __global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t heig
     const float pattern = sinf(u * 10.0f + time) * cosf(v * 10.0f + time) * 0.5f + 0.5f;
     
     // Generate RGB colors
-    const uint8_t r = static_cast<uint8_t>((u * 255.0f));
-    const uint8_t g = static_cast<uint8_t>((v * 255.0f));
-    const uint8_t b = static_cast<uint8_t>((pattern * 255.0f));
+    const uchar4 pixel = make_uchar4(
+        static_cast<unsigned char>(u * 255.0f),         // R
+        static_cast<unsigned char>(v * 255.0f),         // G
+        static_cast<unsigned char>(pattern * 255.0f),   // B
+        255                                             // A
+    );
     
-    // Write to output (RGBA format), using pitch for row stride
-    const size_t idx = y * pitch + x * 4;
-    output[idx + 0] = r;
-    output[idx + 1] = g;
-    output[idx + 2] = b;
-    output[idx + 3] = 255; // Alpha
+    // Write to surface
+    surf2Dwrite(pixel, surface, x * sizeof(uchar4), y);
 }
 
 } // namespace
 
 namespace cudapattern {
 
-cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, size_t pitch, uint32_t frameNumber) {
-    if (!image.valid || !image.cudaDevPtr) {
+cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, uint32_t frameNumber) {
+    if (!image.valid || !image.cudaSurface) {
         return cudaErrorInvalidValue;
     }
     
@@ -48,10 +48,9 @@ cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, size_t pitc
     
     // Launch kernel
     testPatternKernel<<<gridDim, blockDim>>>(
-        static_cast<uint8_t*>(image.cudaDevPtr),
+        image.cudaSurface,
         image.extent.width,
         image.extent.height,
-        pitch,
         frameNumber
     );
     

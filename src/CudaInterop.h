@@ -24,8 +24,11 @@ struct CudaVulkanImage {
 
     // CUDA-specific members
     cudaExternalMemory_t cudaExtMem = nullptr;
-    void* cudaDevPtr = nullptr;
+    cudaMipmappedArray_t cudaMipArray = nullptr;
+    cudaArray_t cudaArray = nullptr;  // Level 0 of the mipmap array
+    cudaSurfaceObject_t cudaSurface = 0;  // Surface object for writing to the array
 };
+
 // Creates a Vulkan image that can be imported/exported with CUDA.
 // Returns a struct containing the Vulkan resources and a file descriptor
 // that can be imported into CUDA.
@@ -38,9 +41,7 @@ void destroyCudaVulkanImage(const Context* context, CudaVulkanImage& image);
 
 // Import and map the Vulkan memory into CUDA
 bool importVulkanMemoryToCuda(CudaVulkanImage& image,
-    VkDeviceSize size);
-
-// Get the subresource layout for the Vulkan image
-VkSubresourceLayout getCudaVulkanImageSubresourceLayout(const Context* context, CudaVulkanImage& image);
+    VkFormat format,
+    VkExtent3D extent);
 
 } // namespace cudainterop

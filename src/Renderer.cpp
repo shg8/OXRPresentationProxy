@@ -197,11 +197,7 @@ void Renderer::generateTestPatterns()
     auto& stereoImageSet = offscreenImages.at(currentRenderProcessIndex);
     for (size_t eyeIndex = 0u; eyeIndex < EYE_COUNT; ++eyeIndex) {
         auto& image = stereoImageSet.at(eyeIndex);
-        
-        // Get the subresource layout to determine the pitch
-        VkSubresourceLayout layout = cudainterop::getCudaVulkanImageSubresourceLayout(context, image);
-        
-        if (cudapattern::generateTestPattern(image, layout.rowPitch, frameCounter) != cudaSuccess) {
+        if (cudapattern::generateTestPattern(image, frameCounter) != cudaSuccess) {
             util::error(Error::GenericVulkan, "Failed to generate CUDA test pattern");
         }
     }
