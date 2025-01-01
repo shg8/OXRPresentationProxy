@@ -30,6 +30,9 @@ public:
 
     void transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int swapchainImageIndex);
 
+    // Generate test patterns in the offscreen images
+    void generateTestPatterns();
+
     enum BufferPoolImageStatus {
         FREE,
         AVAILABLE,
@@ -45,4 +48,5 @@ private:
     VkCommandPool commandPool = nullptr;
     std::vector<RenderProcess*> renderProcesses;
     size_t currentRenderProcessIndex = 0u;
+    uint32_t frameCounter = 0u;
 };

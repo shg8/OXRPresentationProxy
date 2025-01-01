@@ -47,15 +47,27 @@ set(SRC
 
         CudaInterop.cpp
         CudaInterop.h
+
+        CudaTestPattern.h
+)
+
+set(CUDA_SRC
+        CudaTestPattern.cu
 )
 
 find_package(CUDAToolkit REQUIRED)
+enable_language(CUDA)
 
 add_executable(${TARGET_NAME})
-target_sources(${TARGET_NAME} PRIVATE ${SRC})
+target_sources(${TARGET_NAME} PRIVATE ${SRC} ${CUDA_SRC})
 target_include_directories(${TARGET_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS} ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(${TARGET_NAME} PRIVATE boxer glfw glm openxr tinyobjloader ${Vulkan_LIBRARIES})
 target_link_libraries(${TARGET_NAME} PRIVATE CUDA::cudart)
+
+# Set CUDA architectures if not already set
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES native)
+endif()
 
 target_compile_definitions(${TARGET_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG>) # Add a clean DEBUG prepocessor define if applicable
 set_target_properties(${TARGET_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>") # For MSVC debugging

@@ -159,6 +159,14 @@ Headset::Headset(const Context* context)
         return;
     }
 
+    // Assert the two eyes have the same resolution (if there are two eyes)
+    if (eyeCount == 2u && (eyeImageInfos.at(0).recommendedImageRectWidth != eyeImageInfos.at(1).recommendedImageRectWidth ||
+        eyeImageInfos.at(0).recommendedImageRectHeight != eyeImageInfos.at(1).recommendedImageRectHeight)) {
+        util::error("The two eyes have different resolutions");
+        valid = false;
+        return;
+    }
+
     // Allocate the eye poses
     eyePoses.resize(eyeCount);
     for (XrView& eyePose : eyePoses) {

@@ -2,6 +2,7 @@
 
 #include "Context.h"
 #include "CudaInterop.h"
+#include "CudaTestPattern.h"
 #include "DataBuffer.h"
 #include "Headset.h"
 #include "MeshData.h"
@@ -43,7 +44,7 @@ Renderer::Renderer(const Context* context, const Headset* headset)
     }
 
     offscreenImages.resize(framesInFlightCount);
-    VkExtent2D stereoSize { 1920, 1080 };
+    VkExtent2D stereoSize = headset->getEyeResolution(0);
     for (size_t bufferPoolIndex = 0u; bufferPoolIndex < framesInFlightCount; ++bufferPoolIndex) {
         for (size_t eyeIndex = 0u; eyeIndex < EYE_COUNT; ++eyeIndex) {
             offscreenImages.at(bufferPoolIndex).at(eyeIndex) = cudainterop::createCudaVulkanImage(context, stereoSize, VK_FORMAT_R8G8B8A8_UNORM);
@@ -162,6 +163,7 @@ Renderer::~Renderer()
 void Renderer::record(size_t swapchainImageIndex)
 {
     currentRenderProcessIndex = (currentRenderProcessIndex + 1u) % renderProcesses.size();
+    frameCounter++; // Increment frame counter
 
     RenderProcess* renderProcess = renderProcesses.at(currentRenderProcessIndex);
     const VkDevice device = context->getVkDevice();
@@ -176,6 +178,9 @@ void Renderer::record(size_t swapchainImageIndex)
         return;
     }
 
+    // Generate test patterns in the offscreen images
+    generateTestPatterns();
+
     const VkCommandBuffer commandBuffer = renderProcess->getCommandBuffer();
 
     if (vkResetCommandBuffer(commandBuffer, 0u) != VK_SUCCESS) {
@@ -188,6 +193,17 @@ void Renderer::record(size_t swapchainImageIndex)
     }
 
     transferToSwapchain(commandBuffer, currentRenderProcessIndex, swapchainImageIndex);
+}
+
+void Renderer::generateTestPatterns()
+{
+    auto& stereoImageSet = offscreenImages.at(currentRenderProcessIndex);
+    for (size_t eyeIndex = 0; eyeIndex < EYE_COUNT; ++eyeIndex) {
+        auto& image = stereoImageSet.at(eyeIndex);
+        if (cudapattern::generateTestPattern(image, frameCounter) != cudaSuccess) {
+            util::error(Error::GenericVulkan, "Failed to generate CUDA test pattern");
+        }
+    }
 }
 
 void Renderer::submit(bool useSemaphores) const
