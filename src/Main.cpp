@@ -81,7 +81,7 @@ int main()
             }
         }
 
-        const bool mirrorViewVisible = (mirrorResult == MirrorView::RenderResult::Visible);
+        const bool mirrorViewVisible = (enableMirrorView && mirrorResult == MirrorView::RenderResult::Visible);
 
         renderer->submit(mirrorViewVisible);
         if (mirrorViewVisible) {
