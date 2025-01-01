@@ -27,6 +27,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 # Create Python extension module
 add_library(OXRPresentationPython MODULE
     ${CMAKE_CURRENT_SOURCE_DIR}/python_extension/PythonBindings.cpp
+    ${CMAKE_SOURCE_DIR}/src/Context.cpp
+    ${CMAKE_SOURCE_DIR}/src/Controllers.cpp
+    ${CMAKE_SOURCE_DIR}/src/CudaInterop.cpp
+    ${CMAKE_SOURCE_DIR}/src/CudaTestPattern.cu
+    ${CMAKE_SOURCE_DIR}/src/DataBuffer.cpp
+    ${CMAKE_SOURCE_DIR}/src/Headset.cpp
+    ${CMAKE_SOURCE_DIR}/src/ImageBuffer.cpp
+    ${CMAKE_SOURCE_DIR}/src/MeshData.cpp
+    ${CMAKE_SOURCE_DIR}/src/MirrorView.cpp
+    ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
+    ${CMAKE_SOURCE_DIR}/src/RenderProcess.cpp
+    ${CMAKE_SOURCE_DIR}/src/RenderTarget.cpp
+    ${CMAKE_SOURCE_DIR}/src/Renderer.cpp
+    ${CMAKE_SOURCE_DIR}/src/Util.cpp
 )
 
 # Configure the Python extension
@@ -36,12 +50,15 @@ set_target_properties(OXRPresentationPython PROPERTIES
     CXX_STANDARD 17  # PyTorch requires C++17
 )
 
-target_include_directories(OXRPresentationPython PRIVATE ${Vulkan_INCLUDE_DIRS} ${CUDAToolkit_INCLUDE_DIRS})
+target_include_directories(OXRPresentationPython PRIVATE 
+    ${Vulkan_INCLUDE_DIRS} 
+    ${CUDAToolkit_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/src  # Add source directory to include path
+)
 
 # Link dependencies
 target_link_libraries(OXRPresentationPython PRIVATE
     pybind11::module
-    ${PROJECT_NAME}  # Link against main project
     CUDA::cudart
     "${TORCH_LIBRARIES}"
     ${Vulkan_LIBRARIES}

@@ -1,7 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <torch/extension.h>
-#include <c10/cuda/CUDAStream.h>
 
 #include "../src/Context.h"
 #include "../src/Headset.h"
@@ -115,50 +114,42 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
         throw std::runtime_error("VR system not initialized");
     }
 
-    // Convert py::object to torch::Tensor
-    auto verifyAndGetTensor = [](const py::object& obj, cudainterop::CudaVulkanImage& targetImage) -> torch::Tensor {
-        if (!py::hasattr(obj, "cuda")) {
+    // Verify tensor properties
+    auto verifyTensor = [](const py::object& tensor, cudainterop::CudaVulkanImage& targetImage) {
+        if (!torch::is_tensor(tensor)) {
             throw std::runtime_error("Input must be a torch tensor");
         }
-
-        torch::Tensor tensor = torch::from_blob(
-            obj.ptr(),
-            {targetImage.extent.height, targetImage.extent.width, 4},
-            torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA)
-        );
-
-        if (tensor.device().type() != torch::kCUDA) {
+        
+        auto t = torch::from_blob(tensor.ptr());
+        if (t.device().type() != torch::kCUDA) {
             throw std::runtime_error("Tensor must be on CUDA device");
         }
-
-        if (tensor.dim() != 3 || tensor.size(2) != 4) {
+        
+        if (t.dim() != 3 || t.size(2) != 4) {
             throw std::runtime_error("Tensor must have shape (H, W, 4)");
         }
 
-        if (tensor.size(0) != targetImage.extent.height || tensor.size(1) != targetImage.extent.width) {
+        // Check dimensions match the target image
+        if (t.size(0) != targetImage.extent.height || t.size(1) != targetImage.extent.width) {
             throw std::runtime_error("Tensor dimensions must match target image size");
         }
-
-        // Ensure tensor is contiguous and in the correct memory format
-        tensor = tensor.contiguous();
-        return tensor;
     };
 
     // Get current frame's images
     auto& stereoImageSet = g_renderer->offscreenImages.at(g_renderer->currentRenderProcessIndex);
 
-    // Verify and get tensors
-    torch::Tensor leftTensor = verifyAndGetTensor(leftEyeTensor, stereoImageSet[0]);
-    torch::Tensor rightTensor = verifyAndGetTensor(rightEyeTensor, stereoImageSet[1]);
-
-    // Get the current CUDA stream
-    cudaStream_t stream = c10::cuda::getCurrentCUDAStream();
+    // Verify tensors match our requirements
+    verifyTensor(leftEyeTensor, stereoImageSet[0]);
+    verifyTensor(rightEyeTensor, stereoImageSet[1]);
 
     // Copy data from tensors to CUDA surfaces
-    auto copyTensorToImage = [stream](const torch::Tensor& tensor, cudainterop::CudaVulkanImage& image) {
-        void* tensorData = tensor.data_ptr();
-        size_t pitch = tensor.stride(0) * tensor.element_size();
-
+    auto copyTensorToImage = [](const py::object& tensor, cudainterop::CudaVulkanImage& image) {
+        auto t = torch::from_blob(tensor.ptr());
+        void* tensorData = t.data_ptr();
+        
+        // Get tensor properties
+        size_t pitch = t.stride(0) * sizeof(float); // Assuming float32 tensors
+        
         // Copy the data
         cudaError_t result = cudainterop::copyFromDevicePointerToCudaImage(
             image,
@@ -166,22 +157,18 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
             pitch,
             image.extent
         );
-
+        
         if (result != cudaSuccess) {
             throw std::runtime_error("Failed to copy tensor data to CUDA surface");
         }
     };
 
-    // Copy tensors to images
-    copyTensorToImage(leftTensor, stereoImageSet[0]);
-    copyTensorToImage(rightTensor, stereoImageSet[1]);
-
-    // Synchronize the CUDA stream to ensure copies are complete
-    cudaStreamSynchronize(stream);
+    copyTensorToImage(leftEyeTensor, stereoImageSet[0]);
+    copyTensorToImage(rightEyeTensor, stereoImageSet[1]);
 
     // Record and submit
     g_renderer->record(g_currentSwapchainImageIndex);
-    g_renderer->submit(true);  // Use semaphores for synchronization
+    g_renderer->submit(false);
 
     // End the frame
     g_headset->endFrame();
