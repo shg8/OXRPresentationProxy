@@ -179,11 +179,6 @@ namespace cudainterop
 
     bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent3D extent)
     {
-        if (!image.valid) {
-            util::error(Error::GenericVulkan, "Invalid image");
-            return false;
-        }
-
         // Set up the external memory handle descriptor
         cudaExternalMemoryHandleDesc memHandleDesc = {};
 #ifdef _WIN32
@@ -264,12 +259,7 @@ namespace cudainterop
     void destroyCudaVulkanImage(const Context* context, CudaVulkanImage& image)
     {
         if (!image.valid) return;
-        
-        // Clean up CUDA resources first
-        if (image.cudaDevPtr) {
-            cudaFree(image.cudaDevPtr);
-            image.cudaDevPtr = nullptr;
-        }
+
         if (image.cudaExtMem) {
             cudaDestroyExternalMemory(image.cudaExtMem);
             image.cudaExtMem = nullptr;

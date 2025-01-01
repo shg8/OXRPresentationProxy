@@ -691,7 +691,7 @@ void Context::sync() const
 }
 
 bool Context::isValid() const
-{
+{\
     return valid;
 }
 
