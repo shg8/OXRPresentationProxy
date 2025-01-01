@@ -30,16 +30,16 @@ static Renderer* g_renderer = nullptr;
 static uint32_t g_currentSwapchainImageIndex = 0;
 
 // Initialize the VR system
-bool initialize() {
+py::dict initialize() {
     if (g_context || g_headset || g_renderer) {
-        return false; // Already initialized
+        throw std::runtime_error("Already initialized");
     }
 
     g_context = new Context();
     if (!g_context->isValid()) {
         delete g_context;
         g_context = nullptr;
-        return false;
+        throw std::runtime_error("Failed to initialize Context");
     }
 
     g_headset = new Headset(g_context);
@@ -48,7 +48,7 @@ bool initialize() {
         g_headset = nullptr;
         delete g_context;
         g_context = nullptr;
-        return false;
+        throw std::runtime_error("Failed to initialize Headset");
     }
 
     try {
@@ -58,10 +58,15 @@ bool initialize() {
         g_headset = nullptr;
         delete g_context;
         g_context = nullptr;
-        return false;
+        throw std::runtime_error("Failed to initialize Renderer");
     }
 
-    return true;
+    // Get swapchain extent and return it
+    VkExtent2D extent = g_headset->getSwapchainExtent();
+    py::dict result;
+    result["width"] = extent.width;
+    result["height"] = extent.height;
+    return result;
 }
 
 // Clean up resources
@@ -184,7 +189,7 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
 PYBIND11_MODULE(OXRPresentationPython, m) {
     m.doc() = "Python bindings for OXRPresentationProxy"; 
     
-    m.def("initialize", &initialize, "Initialize the VR system");
+    m.def("initialize", &initialize, "Initialize the VR system and return swapchain dimensions");
     m.def("cleanup", &cleanup, "Clean up VR system resources");
     m.def("startFrame", &startFrame, "Start a new frame and get eye matrices");
     m.def("submitFrame", &submitFrame, "Submit frame data from PyTorch tensors",

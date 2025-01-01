@@ -1,14 +1,12 @@
 # Add pybind11
 include(FetchContent)
+set(PYBIND11_FINDPYTHON ON)
 FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
-    GIT_TAG        v2.11.1
+    GIT_TAG        v2.13.6
 )
 FetchContent_MakeAvailable(pybind11)
-
-# Find required packages
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
     message("libtorch workaround")
@@ -25,7 +23,7 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Create Python extension module
-add_library(OXRPresentationPython MODULE
+pybind11_add_module(OXRPresentationPython 
     ${CMAKE_CURRENT_SOURCE_DIR}/PythonBindings.cpp
     ${CMAKE_SOURCE_DIR}/src/Context.cpp
     ${CMAKE_SOURCE_DIR}/src/Controllers.cpp
@@ -85,3 +83,5 @@ if (WIN32)
         add_custom_command(TARGET OXRPresentationPython POST_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${DLL} "$<TARGET_FILE_DIR:OXRPresentationPython>")
     endforeach ()
 endif ()
+
+install(TARGETS OXRPresentationPython DESTINATION ${CMAKE_INSTALL_LIBDIR})
