@@ -1,7 +1,18 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include <torch/extension.h>
 
+// PyTorch includes
+#include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
+
+// GLM includes
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+// Project includes
 #include "../src/Context.h"
 #include "../src/Headset.h"
 #include "../src/Renderer.h"
@@ -80,7 +91,7 @@ py::dict startFrame() {
 
     // Get matrices for both eyes
     py::dict frameInfo;
-    for (size_t eyeIndex = 0; eyeIndex < EYE_COUNT; ++eyeIndex) {
+    for (size_t eyeIndex = 0; eyeIndex < 2; ++eyeIndex) {
         // Get view and projection matrices
         glm::mat4 viewMatrix = g_headset->getEyeViewMatrix(eyeIndex);
         glm::mat4 projMatrix = g_headset->getEyeProjectionMatrix(eyeIndex);
@@ -101,8 +112,8 @@ py::dict startFrame() {
 
         // Add to return dictionary
         std::string eyePrefix = (eyeIndex == 0) ? "left_" : "right_";
-        frameInfo[eyePrefix + "view_matrix"] = viewArray;
-        frameInfo[eyePrefix + "projection_matrix"] = projArray;
+        frameInfo[eyePrefix + "view_matrix"].cast() = viewArray;
+        frameInfo[eyePrefix + "projection_matrix"].cast() = projArray;
     }
 
     return frameInfo;
@@ -116,7 +127,7 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
 
     // Verify tensor properties
     auto verifyTensor = [](const py::object& tensor, cudainterop::CudaVulkanImage& targetImage) {
-        if (!torch::is_tensor(tensor)) {
+        if (!torch::jit::is_tensor(tensor.ptr())) {
             throw std::runtime_error("Input must be a torch tensor");
         }
         
