@@ -316,11 +316,6 @@ namespace cudainterop
             return cudaErrorInvalidValue;
         }
 
-        // Create a surface descriptor for writing
-        cudaResourceDesc surfDesc = {};
-        surfDesc.resType = cudaResourceTypeSurface;
-        surfDesc.res.surface.surface = image.cudaSurface;
-
         // Copy memory using cudaMemcpy2D
         cudaError_t result = cudaMemcpy2D(image.cudaArray,
                                          size.width * 4,  // Destination pitch (RGBA = 4 bytes)

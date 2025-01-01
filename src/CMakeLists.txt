@@ -18,9 +18,6 @@ set(SRC
         ImageBuffer.cpp
         ImageBuffer.h
 
-        MeshData.cpp
-        MeshData.h
-
         MirrorView.cpp
         MirrorView.h
 

@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Create Python extension module
 add_library(OXRPresentationPython MODULE
-    ${CMAKE_CURRENT_SOURCE_DIR}/python_extension/PythonBindings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PythonBindings.cpp
     ${CMAKE_SOURCE_DIR}/src/Context.cpp
     ${CMAKE_SOURCE_DIR}/src/Controllers.cpp
     ${CMAKE_SOURCE_DIR}/src/CudaInterop.cpp
@@ -34,7 +34,6 @@ add_library(OXRPresentationPython MODULE
     ${CMAKE_SOURCE_DIR}/src/DataBuffer.cpp
     ${CMAKE_SOURCE_DIR}/src/Headset.cpp
     ${CMAKE_SOURCE_DIR}/src/ImageBuffer.cpp
-    ${CMAKE_SOURCE_DIR}/src/MeshData.cpp
     ${CMAKE_SOURCE_DIR}/src/MirrorView.cpp
     ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
     ${CMAKE_SOURCE_DIR}/src/RenderProcess.cpp
@@ -62,7 +61,7 @@ target_link_libraries(OXRPresentationPython PRIVATE
     CUDA::cudart
     "${TORCH_LIBRARIES}"
     ${Vulkan_LIBRARIES}
-    glfw glm openxr
+    glfw glm openxr boxer
 )
 
 # Copy PyTorch DLLs on Windows

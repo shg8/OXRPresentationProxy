@@ -1,7 +1,6 @@
 #include "Context.h"
 #include "Controllers.h"
 #include "Headset.h"
-#include "MeshData.h"
 #include "MirrorView.h"
 #include "Model.h"
 #include "Renderer.h"

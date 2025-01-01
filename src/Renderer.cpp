@@ -5,7 +5,6 @@
 #include "CudaTestPattern.h"
 #include "DataBuffer.h"
 #include "Headset.h"
-#include "MeshData.h"
 #include "Model.h"
 #include "Pipeline.h"
 #include "RenderProcess.h"
