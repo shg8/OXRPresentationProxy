@@ -1,9 +1,5 @@
 set(TARGET_NAME OXRPresentationProxy)
 
-set(SHADER_SRC
-
-)
-
 set(SRC
         Main.cpp
 
@@ -76,16 +72,3 @@ if (WIN32)
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${DLL} "$<TARGET_FILE_DIR:${TARGET_NAME}>")
     endforeach ()
 endif ()
-
-# Copy models folder
-add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory "${CMAKE_SOURCE_DIR}/models" "$<TARGET_FILE_DIR:${TARGET_NAME}>/models")
-
-# Create output folder for compiled shaders
-# Otherwise shader compilation fails
-add_custom_command(TARGET ${TARGET_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E make_directory "$<TARGET_FILE_DIR:${TARGET_NAME}>/shaders")
-
-# Compile shaders into output folder
-foreach (SHADER ${SHADER_SRC})
-    set(SHADER_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}")
-    add_custom_command(TARGET ${TARGET_NAME} DEPENDS ${SHADER_INPUT} COMMAND glslc ARGS --target-env=vulkan1.3 ${SHADER_INPUT} -std=450core -O -o "$<TARGET_FILE_DIR:${TARGET_NAME}>/${SHADER}.spv" $<$<NOT:$<CONFIG:DEBUG>>:-O> COMMENT ${SHADER})
-endforeach ()
