@@ -98,8 +98,6 @@ void Renderer::record(size_t swapchainImageIndex)
     }
 
     transferToSwapchain(commandBuffer, swapchainImageIndex, swapchainImageIndex);
-
-    vkCmdEndRenderPass(commandBuffer);
 }
 
 void Renderer::submit(bool useSemaphores) const

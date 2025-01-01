@@ -2,8 +2,11 @@
 #include "Context.h"
 #include "Util.h" // for error handling
 
+#include <stdexcept>
+
 #ifdef _WIN32
 #include <windows.h>
+#include <vulkan/vulkan_win32.h>
 #else
 #include <fcntl.h>
 #include <unistd.h>
@@ -18,7 +21,6 @@ namespace cudainterop
         CudaVulkanImage result;
         result.extent = size;
         result.valid = false;  // Will set to true only if everything succeeds
-        result.memoryFd = -1;  // Initialize to invalid fd
         
         VkDevice device = context->getVkDevice();
         
@@ -100,7 +102,8 @@ namespace cudainterop
             util::error(Error::GenericVulkan, "Failed to get memory Win32 handle");
             vkFreeMemory(device, result.deviceMemory, nullptr);
             vkDestroyImage(device, result.image, nullptr);
-            result.image = result.deviceMemory = VK_NULL_HANDLE;
+            result.image = VK_NULL_HANDLE;
+            result.deviceMemory = VK_NULL_HANDLE;
             return result;
         }
 
@@ -132,12 +135,7 @@ namespace cudainterop
         // 4. Bind the memory to the image
         if (vkBindImageMemory(device, result.image, result.deviceMemory, 0) != VK_SUCCESS) {
             util::error(Error::GenericVulkan, "Failed to bind memory for CUDA interop");
-            close(result.memoryFd);  // Don't forget to close the fd on error
-            vkFreeMemory(device, result.deviceMemory, nullptr);
-            vkDestroyImage(device, result.image, nullptr);
-            result.image = result.deviceMemory = VK_NULL_HANDLE;
-            result.memoryFd = -1;
-            return result;
+            throw std::runtime_error("Failed to bind memory for CUDA interop");
         }
 
         // 5. Create image view
@@ -159,12 +157,7 @@ namespace cudainterop
 
         if (vkCreateImageView(device, &viewInfo, nullptr, &result.imageView) != VK_SUCCESS) {
             util::error(Error::GenericVulkan, "Failed to create image view for CUDA interop");
-            close(result.memoryFd);
-            vkFreeMemory(device, result.deviceMemory, nullptr);
-            vkDestroyImage(device, result.image, nullptr);
-            result.image = result.deviceMemory = VK_NULL_HANDLE;
-            result.memoryFd = -1;
-            return result;
+            throw std::runtime_error("Failed to create image view for CUDA interop");
         }
 
         // Everything succeeded
@@ -220,7 +213,8 @@ namespace cudainterop
     VkSubresourceLayout getCudaVulkanImageSubresourceLayout(const Context* context, CudaVulkanImage& image)
     {
         VkSubresourceLayout layout;
-        vkGetImageSubresourceLayout(context->getVkDevice(), image.image, &layout);
+        VkImageSubresource subresource { 0, 0, 0 };
+        vkGetImageSubresourceLayout(context->getVkDevice(), image.image, &subresource, &layout);
         return layout;
     }
 
@@ -255,9 +249,9 @@ namespace cudainterop
         }
 
 #ifdef _WIN32
-        if (image.memoryFd != -1) {
-            CloseHandle(reinterpret_cast<HANDLE>(image.memoryFd));
-            image.memoryFd = -1;
+        if (image.memoryHandle != nullptr) {
+            CloseHandle(reinterpret_cast<HANDLE>(image.memoryHandle));
+            image.memoryHandle = nullptr;
         }
 #else
         if (image.memoryFd >= 0) {
