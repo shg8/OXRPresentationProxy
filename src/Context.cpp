@@ -265,10 +265,11 @@ Context::Context()
     // Get the required Vulkan instance extensions from OpenXR and add them
     {
         std::string buffer;
-        uint32_t count = 2048;
-        buffer.resize(count);
+        uint32_t count[8];
+        count[0] = 2048;
+        buffer.resize(count[0]);
 
-        result = xrGetVulkanInstanceExtensionsKHR(xrInstance, systemId, count, &count, buffer.data());
+        result = xrGetVulkanInstanceExtensionsKHR(xrInstance, systemId, count[0], &count[0], buffer.data());
         if (XR_FAILED(result)) {
             util::error(Error::GenericOpenXR);
             valid = false;
@@ -559,10 +560,11 @@ bool Context::createDevice(VkSurfaceKHR mirrorSurface)
     // Get the required Vulkan device extensions from OpenXR
     std::vector<const char*> vulkanDeviceExtensions;
     {
-        uint32_t count = 2048;
+        uint32_t count[8];
+        count[0] = 2048;
         std::string buffer;
-        buffer.resize(count);
-        result = xrGetVulkanDeviceExtensionsKHR(xrInstance, systemId, count, &count, buffer.data());
+        buffer.resize(count[0]);
+        result = xrGetVulkanDeviceExtensionsKHR(xrInstance, systemId, count[0], &count[0], buffer.data());
         if (XR_FAILED(result)) {
             util::error(Error::GenericOpenXR);
             return false;
