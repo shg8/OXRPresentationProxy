@@ -36,13 +36,14 @@ namespace cudainterop
         imageInfo.pNext = &extImageInfo;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.format = format;
-        imageInfo.extent = {size.width, size.height};
+        imageInfo.extent = {size.width, size.height, 1};
         imageInfo.mipLevels = 1;
         imageInfo.arrayLayers = 1;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | 
-                         VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                         VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                             VK_IMAGE_USAGE_STORAGE_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -212,7 +213,7 @@ namespace cudainterop
         cudaExternalMemoryMipmappedArrayDesc mipmapDesc = {};
         mipmapDesc.offset = 0;
         mipmapDesc.formatDesc = cudaCreateChannelDesc(8, 8, 8, 8, cudaChannelFormatKindUnsigned);
-        mipmapDesc.extent = make_cudaExtent(extent.width, extent.height, 0);
+        mipmapDesc.extent = make_cudaExtent(extent.width, extent.height, 1);
         mipmapDesc.flags = 0;
         mipmapDesc.numLevels = 1;
 
