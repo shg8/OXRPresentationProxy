@@ -13,6 +13,10 @@ ImageBuffer::ImageBuffer(const Context* context,
     size_t layerCount)
     : context(context)
 {
+    if (usage == 0) {
+        throw std::runtime_error("Usage flags are required");
+    }
+
     const VkDevice device = context->getVkDevice();
 
     // Create an image

@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "__config": "cpp",
+        "__hash_table": "cpp",
+        "__threading_support": "cpp",
+        "__tree": "cpp",
+        "compare": "cpp",
+        "print": "cpp",
+        "string": "cpp",
+        "typeinfo": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "vector": "cpp",
+        "array": "cpp",
+        "map": "cpp",
+        "string_view": "cpp",
+        "unordered_map": "cpp"
+    }
+}
