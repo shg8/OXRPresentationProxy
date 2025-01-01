@@ -53,6 +53,65 @@ Renderer::Renderer(const Context* context, const Headset* headset)
             }
         }
     }
+
+    // Perform initial layout transitions
+    VkCommandBuffer cmdBuffer;
+    VkCommandBufferAllocateInfo allocInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+    if (vkAllocateCommandBuffers(device, &allocInfo, &cmdBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate command buffer for initial layout transition");
+    }
+
+    VkCommandBufferBeginInfo beginInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+    for (auto& stereoImageSet : offscreenImages) {
+        for (auto& image : stereoImageSet) {
+            VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            barrier.image = image.image;
+            barrier.subresourceRange = {
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                0, 1,  // mip levels
+                0, 1   // array layers
+            };
+
+            vkCmdPipelineBarrier(cmdBuffer,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+        }
+    }
+
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkSubmitInfo submitInfo { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdBuffer;
+
+    VkFence fence;
+    VkFenceCreateInfo fenceInfo { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+    if (vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create fence for initial layout transition");
+    }
+
+    if (vkQueueSubmit(context->getVkDrawQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit initial layout transition command buffer");
+    }
+
+    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
+
+    vkDestroyFence(device, fence, nullptr);
+    vkFreeCommandBuffers(device, commandPool, 1, &cmdBuffer);
 }
 
 Renderer::~Renderer()
@@ -166,33 +225,20 @@ void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int
             0, 1 // array layers
         };
 
-        // Transition swapchainImage to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        VkImageMemoryBarrier dstBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-        dstBarrier.srcAccessMask = 0;
-        dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        dstBarrier.image = swapchainImage;
-        dstBarrier.subresourceRange = {
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0, 1, // mip levels
-            static_cast<uint32_t>(eyeIndex), 1 // array layers
-        };
-
-        VkImageMemoryBarrier barriers[] = { srcBarrier, dstBarrier };
         vkCmdPipelineBarrier(cmd,
             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             0,
             0, nullptr,
             0, nullptr,
-            2, barriers);
+            1, &srcBarrier);
 
         // Perform the blit operation
         VkImageBlit region {};
         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.srcSubresource.layerCount = 1;
         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.dstSubresource.baseArrayLayer = static_cast<uint32_t>(eyeIndex);
         region.dstSubresource.layerCount = 1;
 
         region.srcOffsets[0] = { 0, 0, 0 };
@@ -213,19 +259,11 @@ void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int
             swapchainImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region, VK_FILTER_LINEAR);
 
-        // Transition images back to appropriate layouts
+        // Transition source image back to general layout
         srcBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         srcBarrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
         srcBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         srcBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-        dstBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        dstBarrier.dstAccessMask = 0;
-        dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        dstBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        barriers[0] = srcBarrier;
-        barriers[1] = dstBarrier;
 
         vkCmdPipelineBarrier(cmd,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -233,6 +271,6 @@ void Renderer::transferToSwapchain(VkCommandBuffer cmd, int bufferPoolIndex, int
             0,
             0, nullptr,
             0, nullptr,
-            2, barriers);
+            1, &srcBarrier);
     }
 }

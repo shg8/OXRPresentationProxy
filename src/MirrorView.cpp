@@ -241,7 +241,7 @@ MirrorView::RenderResult MirrorView::render(uint32_t swapchainImageIndex)
     imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
     imageMemoryBarrier.subresourceRange.levelCount = 1u;
     imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         VK_DEPENDENCY_BY_REGION_BIT, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
 
     return RenderResult::Visible;
