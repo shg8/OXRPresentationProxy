@@ -16,6 +16,11 @@ class Renderer;
  */
 class MirrorView final {
 public:
+    enum class Source {
+        RenderTarget,
+        OffscreenBuffer
+    };
+
     MirrorView(const Context* context);
     ~MirrorView();
 
@@ -23,6 +28,7 @@ public:
 
     bool connect(const Headset* headset, const Renderer* renderer);
     void processWindowEvents() const;
+    void setSource(Source source) { this->source = source; }
 
     enum class RenderResult {
         Error, // An error occurred
@@ -52,6 +58,8 @@ private:
 
     uint32_t destinationImageIndex = 0u;
     bool resizeDetected = false;
+
+    Source source = Source::RenderTarget;
 
     bool recreateSwapchain();
 };

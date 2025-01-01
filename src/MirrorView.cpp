@@ -137,7 +137,6 @@ MirrorView::RenderResult MirrorView::render(uint32_t swapchainImageIndex)
         if (!recreateSwapchain()) {
             return RenderResult::Error;
         }
-
         return RenderResult::Invisible;
     } else if (result != VK_SUBOPTIMAL_KHR && result != VK_SUCCESS) {
         // Treat a suboptimal like a successful frame
@@ -145,23 +144,36 @@ MirrorView::RenderResult MirrorView::render(uint32_t swapchainImageIndex)
     }
 
     const VkCommandBuffer commandBuffer = renderer->getCurrentCommandBuffer();
-    const VkImage sourceImage = headset->getRenderTarget(swapchainImageIndex)->getImage();
+    VkImage sourceImage;
+    VkExtent2D eyeResolution;
+    uint32_t baseArrayLayer = mirrorEyeIndex;
+    
+    if (source == Source::RenderTarget) {
+        sourceImage = headset->getRenderTarget(swapchainImageIndex)->getImage();
+        eyeResolution = headset->getEyeResolution(mirrorEyeIndex);
+    } else {
+        sourceImage = renderer->getOffscreenImage(mirrorEyeIndex).image;
+        eyeResolution = renderer->getOffscreenImage(mirrorEyeIndex).extent;
+        baseArrayLayer = 0;
+    }
+
     const VkImage destinationImage = swapchainImages.at(destinationImageIndex);
-    const VkExtent2D eyeResolution = headset->getEyeResolution(mirrorEyeIndex);
 
     // Convert the source image layout from undefined to transfer source
     VkImageMemoryBarrier imageMemoryBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     imageMemoryBarrier.image = sourceImage;
-    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageMemoryBarrier.oldLayout = source == Source::RenderTarget ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
     imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.srcAccessMask = source == Source::RenderTarget ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_MEMORY_WRITE_BIT;
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageMemoryBarrier.subresourceRange.layerCount = 1u;
-    imageMemoryBarrier.subresourceRange.baseArrayLayer = mirrorEyeIndex;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = baseArrayLayer;
     imageMemoryBarrier.subresourceRange.levelCount = 1u;
     imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    vkCmdPipelineBarrier(commandBuffer, 
+        source == Source::RenderTarget ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_DEPENDENCY_BY_REGION_BIT, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
 
     // Convert the destination image layout from undefined to transfer destination

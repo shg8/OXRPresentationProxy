@@ -65,7 +65,14 @@ int main()
 
         renderer->generateTestPatterns();
         renderer->record(swapchainImageIndex);
-        renderer->submit(false);
+
+        // Add mirror view rendering
+        if (auto result = mirrorView.render(swapchainImageIndex); result == MirrorView::RenderResult::Error) {
+            return EXIT_FAILURE;
+        } else if (result == MirrorView::RenderResult::Visible) {
+            mirrorView.present();
+        }
+        renderer->submit(true);
 
         if (frameResult == Headset::BeginFrameResult::RenderFully || frameResult == Headset::BeginFrameResult::SkipRender) {
             headset.endFrame();
