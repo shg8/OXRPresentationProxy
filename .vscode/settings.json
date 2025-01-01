@@ -15,6 +15,12 @@
         "map": "cpp",
         "string_view": "cpp",
         "unordered_map": "cpp",
-        "stdexcept": "cpp"
+        "stdexcept": "cpp",
+        "__split_buffer": "cpp",
+        "bitset": "cpp",
+        "initializer_list": "cpp",
+        "queue": "cpp",
+        "set": "cpp",
+        "stack": "cpp"
     }
 }

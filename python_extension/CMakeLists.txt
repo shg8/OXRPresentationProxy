@@ -21,7 +21,7 @@ if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
     target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
 endif()
 
-find_package(Torch CONFIG)
+find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Create Python extension module
@@ -52,6 +52,7 @@ set_target_properties(OXRPresentationPython PROPERTIES
 target_include_directories(OXRPresentationPython PRIVATE 
     ${Vulkan_INCLUDE_DIRS} 
     ${CUDAToolkit_INCLUDE_DIRS}
+    ${TORCH_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src  # Add source directory to include path
 )
 

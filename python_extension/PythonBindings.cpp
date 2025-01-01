@@ -3,6 +3,8 @@
 
 // PyTorch includes
 #include <torch/extension.h>
+#include <torch/types.h>
+#include <torch/python.h>  // This provides the type caster for torch::Tensor
 #include <c10/cuda/CUDAStream.h>
 
 // GLM includes
@@ -120,28 +122,23 @@ py::dict startFrame() {
 }
 
 // Submit frame data from PyTorch tensors
-void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
+void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
     if (!g_context || !g_headset || !g_renderer) {
         throw std::runtime_error("VR system not initialized");
     }
 
     // Verify tensor properties
-    auto verifyTensor = [](const py::object& tensor, cudainterop::CudaVulkanImage& targetImage) {
-        if (!py::isinstance<torch::Tensor>(tensor)) {
-            throw std::runtime_error("Input must be a torch tensor");
-        }
-        
-        auto t = tensor.cast<torch::Tensor>();
-        if (t.device().type() != torch::kCUDA) {
+    auto verifyTensor = [](const torch::Tensor& tensor, cudainterop::CudaVulkanImage& targetImage) {
+        if (tensor.device().type() != torch::kCUDA) {
             throw std::runtime_error("Tensor must be on CUDA device");
         }
         
-        if (t.dim() != 3 || t.size(2) != 4) {
+        if (tensor.dim() != 3 || tensor.size(2) != 4) {
             throw std::runtime_error("Tensor must have shape (H, W, 4)");
         }
 
         // Check dimensions match the target image
-        if (t.size(0) != targetImage.extent.height || t.size(1) != targetImage.extent.width) {
+        if (tensor.size(0) != targetImage.extent.height || tensor.size(1) != targetImage.extent.width) {
             throw std::runtime_error("Tensor dimensions must match target image size");
         }
     };
@@ -154,12 +151,11 @@ void submitFrame(py::object leftEyeTensor, py::object rightEyeTensor) {
     verifyTensor(rightEyeTensor, stereoImageSet[1]);
 
     // Copy data from tensors to CUDA surfaces
-    auto copyTensorToImage = [](const py::object& tensor, cudainterop::CudaVulkanImage& image) {
-        auto t = tensor.cast<torch::Tensor>();
-        void* tensorData = t.data_ptr();
+    auto copyTensorToImage = [](const torch::Tensor& tensor, cudainterop::CudaVulkanImage& image) {
+        void* tensorData = tensor.data_ptr();
         
         // Get tensor properties
-        size_t pitch = t.stride(0) * sizeof(float); // Assuming float32 tensors
+        size_t pitch = tensor.stride(0) * sizeof(float); // Assuming float32 tensors
         
         // Copy the data
         cudaError_t result = cudainterop::copyFromDevicePointerToCudaImage(
