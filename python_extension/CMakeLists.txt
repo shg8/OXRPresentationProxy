@@ -60,7 +60,7 @@ target_include_directories(OXRPresentationPython PRIVATE
 target_link_libraries(OXRPresentationPython PRIVATE
     pybind11::module
     CUDA::cudart
-    "${TORCH_LIBRARIES}"
+    ${TORCH_LIBRARIES}
     ${Vulkan_LIBRARIES}
     glfw glm openxr boxer
 )
@@ -74,6 +74,9 @@ if (MSVC)
                       ${TORCH_DLLS}
                       $<TARGET_FILE_DIR:OXRPresentationPython>)
 endif (MSVC)
+
+find_library(TORCH_PYTHON_LIBRARY torch_python PATHS "${TORCH_INSTALL_ROOT}/lib")
+target_link_libraries(OXRPresentationPython PRIVATE ${TORCH_PYTHON_LIBRARY})
 
 # Copy shared library binaries on Windows
 if (WIN32)
