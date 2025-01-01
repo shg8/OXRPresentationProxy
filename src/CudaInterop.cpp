@@ -62,8 +62,14 @@ namespace cudainterop
         exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;     // Linux only
 #endif
 
+        // Add dedicated allocation info
+        VkMemoryDedicatedAllocateInfo dedicatedAllocInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO};
+        dedicatedAllocInfo.pNext = &exportAllocInfo;
+        dedicatedAllocInfo.image = result.image;
+        dedicatedAllocInfo.buffer = VK_NULL_HANDLE;
+
         VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        allocInfo.pNext = &exportAllocInfo;
+        allocInfo.pNext = &dedicatedAllocInfo;  // Point to the dedicated allocation info
         allocInfo.allocationSize = memReqs.size;
 
         // Find suitable memory type
@@ -168,7 +174,7 @@ namespace cudainterop
         result.valid = true;
 
         // 6. Import the memory into CUDA
-        if (!importVulkanMemoryToCuda(result, format, {size.width, size.height, 1}, memReqs.size)) {
+        if (!importVulkanMemoryToCuda(result, format, size, memReqs.size)) {
             util::error(Error::FeatureNotSupported, "Failed to import Vulkan memory to CUDA");
             throw std::runtime_error("Failed to import Vulkan memory to CUDA");
         }
@@ -176,7 +182,7 @@ namespace cudainterop
         return result;
     }
 
-    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent3D extent, VkDeviceSize memorySize)
+    bool importVulkanMemoryToCuda(CudaVulkanImage& image, VkFormat format, VkExtent2D extent, VkDeviceSize memorySize)
     {
         if (!image.valid) {
             util::error(Error::GenericVulkan, "Invalid image");
