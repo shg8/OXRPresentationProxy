@@ -3,7 +3,7 @@
 
 namespace {
 
-__global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t height, uint32_t frameNumber) {
+__global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t height, size_t pitch, uint32_t frameNumber) {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     
@@ -22,8 +22,8 @@ __global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t heig
     const uint8_t g = static_cast<uint8_t>((v * 255.0f));
     const uint8_t b = static_cast<uint8_t>((pattern * 255.0f));
     
-    // Write to output (RGBA format)
-    const size_t idx = (y * width + x) * 4;
+    // Write to output (RGBA format), using pitch for row stride
+    const size_t idx = y * pitch + x * 4;
     output[idx + 0] = r;
     output[idx + 1] = g;
     output[idx + 2] = b;
@@ -34,7 +34,7 @@ __global__ void testPatternKernel(uint8_t* output, uint32_t width, uint32_t heig
 
 namespace cudapattern {
 
-cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, uint32_t frameNumber) {
+cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, size_t pitch, uint32_t frameNumber) {
     if (!image.valid || !image.cudaDevPtr) {
         return cudaErrorInvalidValue;
     }
@@ -51,6 +51,7 @@ cudaError_t generateTestPattern(cudainterop::CudaVulkanImage& image, uint32_t fr
         static_cast<uint8_t*>(image.cudaDevPtr),
         image.extent.width,
         image.extent.height,
+        pitch,
         frameNumber
     );
     

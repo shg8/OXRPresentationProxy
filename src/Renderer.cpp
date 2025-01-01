@@ -178,9 +178,6 @@ void Renderer::record(size_t swapchainImageIndex)
         return;
     }
 
-    // Generate test patterns in the offscreen images
-    generateTestPatterns();
-
     const VkCommandBuffer commandBuffer = renderProcess->getCommandBuffer();
 
     if (vkResetCommandBuffer(commandBuffer, 0u) != VK_SUCCESS) {
@@ -198,9 +195,13 @@ void Renderer::record(size_t swapchainImageIndex)
 void Renderer::generateTestPatterns()
 {
     auto& stereoImageSet = offscreenImages.at(currentRenderProcessIndex);
-    for (size_t eyeIndex = 0; eyeIndex < EYE_COUNT; ++eyeIndex) {
+    for (size_t eyeIndex = 0u; eyeIndex < EYE_COUNT; ++eyeIndex) {
         auto& image = stereoImageSet.at(eyeIndex);
-        if (cudapattern::generateTestPattern(image, frameCounter) != cudaSuccess) {
+        
+        // Get the subresource layout to determine the pitch
+        VkSubresourceLayout layout = cudainterop::getCudaVulkanImageSubresourceLayout(context, image);
+        
+        if (cudapattern::generateTestPattern(image, layout.rowPitch, frameCounter) != cudaSuccess) {
             util::error(Error::GenericVulkan, "Failed to generate CUDA test pattern");
         }
     }

@@ -63,6 +63,7 @@ int main()
             continue;
         }
 
+        renderer->generateTestPatterns();
         renderer->record(swapchainImageIndex);
         renderer->submit(false);
 
