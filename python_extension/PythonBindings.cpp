@@ -42,6 +42,31 @@ py::dict initialize() {
         throw std::runtime_error("Failed to initialize Context");
     }
 
+    // Create a temporary surface to initialize the device
+    GLFWwindow* tempWindow = glfwCreateWindow(1, 1, "Context Window", nullptr, nullptr);
+    if (!tempWindow) {
+        delete g_context;
+        g_context = nullptr;
+        throw std::runtime_error("Failed to create temporary window");
+    }
+
+    VkSurfaceKHR tempSurface;
+    if (glfwCreateWindowSurface(g_context->getVkInstance(), tempWindow, nullptr, &tempSurface) != VK_SUCCESS) {
+        glfwDestroyWindow(tempWindow);
+        delete g_context;
+        g_context = nullptr;
+        throw std::runtime_error("Failed to create temporary surface");
+    }
+
+    // Create the device
+    if (!g_context->createDevice(tempSurface)) {
+        vkDestroySurfaceKHR(g_context->getVkInstance(), tempSurface, nullptr);
+        glfwDestroyWindow(tempWindow);
+        delete g_context;
+        g_context = nullptr;
+        throw std::runtime_error("Failed to create device");
+    }
+
     g_headset = new Headset(g_context);
     if (!g_headset->isValid()) {
         delete g_headset;
