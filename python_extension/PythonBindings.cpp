@@ -42,35 +42,31 @@ py::dict initialize() {
         throw std::runtime_error("Failed to initialize Context");
     }
 
-    // Create a temporary surface to initialize the device
-    GLFWwindow* tempWindow = glfwCreateWindow(1, 1, "Context Window", nullptr, nullptr);
-    if (!tempWindow) {
+    // Initialize mirror view
+    static MirrorView* g_mirrorView = new MirrorView(g_context);
+    if (!g_mirrorView->isValid()) {
+        delete g_mirrorView;
+        g_mirrorView = nullptr;
         delete g_context;
         g_context = nullptr;
-        throw std::runtime_error("Failed to create temporary window");
+        throw std::runtime_error("Failed to initialize MirrorView");
     }
 
-    VkSurfaceKHR tempSurface;
-    if (glfwCreateWindowSurface(g_context->getVkInstance(), tempWindow, nullptr, &tempSurface) != VK_SUCCESS) {
-        glfwDestroyWindow(tempWindow);
+    // Create device with mirror view surface
+    if (!g_context->createDevice(g_mirrorView->getSurface())) {
+        delete g_mirrorView;
+        g_mirrorView = nullptr;
         delete g_context;
         g_context = nullptr;
-        throw std::runtime_error("Failed to create temporary surface");
-    }
-
-    // Create the device
-    if (!g_context->createDevice(tempSurface)) {
-        vkDestroySurfaceKHR(g_context->getVkInstance(), tempSurface, nullptr);
-        glfwDestroyWindow(tempWindow);
-        delete g_context;
-        g_context = nullptr;
-        throw std::runtime_error("Failed to create device");
+        throw std::runtime_error("Failed to create device with mirror view surface");
     }
 
     g_headset = new Headset(g_context);
     if (!g_headset->isValid()) {
         delete g_headset;
         g_headset = nullptr;
+        delete g_mirrorView;
+        g_mirrorView = nullptr;
         delete g_context;
         g_context = nullptr;
         throw std::runtime_error("Failed to initialize Headset");
@@ -81,9 +77,24 @@ py::dict initialize() {
     } catch (...) {
         delete g_headset;
         g_headset = nullptr;
+        delete g_mirrorView;
+        g_mirrorView = nullptr;
         delete g_context;
         g_context = nullptr;
         throw std::runtime_error("Failed to initialize Renderer");
+    }
+
+    // Connect mirror view to headset and renderer
+    if (!g_mirrorView->connect(g_headset, g_renderer)) {
+        delete g_renderer;
+        g_renderer = nullptr;
+        delete g_headset;
+        g_headset = nullptr;
+        delete g_mirrorView;
+        g_mirrorView = nullptr;
+        delete g_context;
+        g_context = nullptr;
+        throw std::runtime_error("Failed to connect mirror view");
     }
 
     // Get swapchain extent and return it
@@ -100,6 +111,8 @@ void cleanup() {
     g_renderer = nullptr;
     delete g_headset;
     g_headset = nullptr;
+    delete g_mirrorView;
+    g_mirrorView = nullptr;
     delete g_context;
     g_context = nullptr;
 }
@@ -205,7 +218,19 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
 
     // Record and submit
     g_renderer->record(g_currentSwapchainImageIndex);
-    g_renderer->submit(false);
+
+    // Render to mirror view
+    MirrorView::RenderResult mirrorResult = g_mirrorView->render(g_currentSwapchainImageIndex);
+    if (mirrorResult == MirrorView::RenderResult::Error) {
+        throw std::runtime_error("Failed to render mirror view");
+    }
+
+    const bool mirrorViewVisible = (mirrorResult == MirrorView::RenderResult::Visible);
+    g_renderer->submit(mirrorViewVisible);
+
+    if (mirrorViewVisible) {
+        g_mirrorView->present();
+    }
 
     // End the frame
     g_headset->endFrame();
