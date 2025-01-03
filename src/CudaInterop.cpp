@@ -316,14 +316,17 @@ namespace cudainterop
             return cudaErrorInvalidValue;
         }
 
-        // Copy memory using cudaMemcpy2D
-        cudaError_t result = cudaMemcpy2D(image.cudaArray,
-                                         size.width * 4,  // Destination pitch (RGBA = 4 bytes)
-                                         devicePtr,
-                                         devicePitch,
-                                         size.width * 4,  // Width in bytes (RGBA = 4 bytes)
-                                         size.height,
-                                         cudaMemcpyDeviceToDevice);
+        // Use cudaMemcpy2DToArray instead of cudaMemcpy2D
+        cudaError_t result = cudaMemcpy2DToArray(
+            image.cudaArray,
+            /* wOffset = */ 0,
+            /* hOffset = */ 0,
+            devicePtr,
+            devicePitch,
+            size.width * 4,   // width in bytes (4 channels * 1 float32 each = 4 bytes)
+            size.height,
+            cudaMemcpyDeviceToDevice
+        );
 
         return result;
     }
