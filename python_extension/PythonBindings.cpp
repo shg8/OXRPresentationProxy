@@ -201,8 +201,7 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
         void* tensorData = tensor.data_ptr();
         
         // Get tensor properties
-        size_t pitch = tensor.stride(0) * sizeof(float); // Assuming float32 tensors
-        
+        size_t pitch = tensor.stride(0);        
         // Copy the data
         cudaError_t result = cudainterop::copyFromDevicePointerToCudaImage(
             image,
