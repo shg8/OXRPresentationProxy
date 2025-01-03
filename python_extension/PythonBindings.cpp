@@ -186,7 +186,7 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
     g_headset->endFrame();
 }
 
-PYBIND11_MODULE(OXRPresentationPython, m) {
+PYBIND11_MODULE(_core, m) {
     m.doc() = "Python bindings for OXRPresentationProxy"; 
     
     m.def("initialize", &initialize, "Initialize the VR system and return swapchain dimensions");

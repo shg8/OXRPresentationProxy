@@ -105,4 +105,4 @@ if (WIN32)
     endforeach ()
 endif ()
 
-install(TARGETS OXRPresentationPython DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS OXRPresentationPython DESTINATION OXRPresentationPython)
