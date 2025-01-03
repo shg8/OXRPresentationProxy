@@ -9,6 +9,9 @@ def create_test_pattern(height, width, is_left_eye=True, t=0.0):
     y = torch.linspace(0, 1, height, device='cuda').view(-1, 1).expand(height, width)
     x = torch.linspace(0, 1, width, device='cuda').view(1, -1).expand(height, width)
     
+    # Convert time to tensor and move to CUDA
+    t = torch.tensor(t, device='cuda')
+    
     # Create a circular gradient with moving center
     center_x = 0.5 + 0.2 * torch.cos(t)
     center_y = 0.5 + 0.2 * torch.sin(t)
