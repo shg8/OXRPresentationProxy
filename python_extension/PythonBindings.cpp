@@ -20,11 +20,13 @@
 #include "../src/Renderer.h"
 #include "../src/CudaInterop.h"
 #include "../src/CudaTestPattern.h"
+#include "../src/MirrorView.h"
 
 namespace py = pybind11;
 
 // Global state (we'll need to manage this better in production)
 static Context* g_context = nullptr;
+static MirrorView* g_mirrorView = nullptr;
 static Headset* g_headset = nullptr;
 static Renderer* g_renderer = nullptr;
 static uint32_t g_currentSwapchainImageIndex = 0;
@@ -43,7 +45,7 @@ py::dict initialize() {
     }
 
     // Initialize mirror view
-    static MirrorView* g_mirrorView = new MirrorView(g_context);
+    g_mirrorView = new MirrorView(g_context);
     if (!g_mirrorView->isValid()) {
         delete g_mirrorView;
         g_mirrorView = nullptr;
