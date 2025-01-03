@@ -8,15 +8,23 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
-    message("libtorch workaround")
-    add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
-    # ensure that PyTorch is told to use NVTX3 headers
-    target_compile_definitions(
+if(
+    PYTORCH_VERSION VERSION_GREATER_EQUAL 2.5.0 AND
+    PYTORCH_CUDA_VERSION VERSION_GREATER_EQUAL 12
+)
+    message(STATUS "PyTorch NVTX headers workaround: Yes")
+    # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists
+    if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
+        add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
+        # ensure that PyTorch is told to use NVTX3 headers
+        target_compile_definitions(
             CUDA::nvToolsExt INTERFACE
             TORCH_CUDA_USE_NVTX3
-    )
-    target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
+        )
+        target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
+    endif()
+else()
+    message(STATUS "PyTorch NVTX headers workaround: No")
 endif()
 
 find_package(Torch REQUIRED)
@@ -77,4 +85,4 @@ if (WIN32)
     endforeach ()
 endif ()
 
-install(TARGETS OXRPresentationPython DESTINATION OXRPresentationPython)
+install(TARGETS OXRPresentationPython DESTINATION .)
