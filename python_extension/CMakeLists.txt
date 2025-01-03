@@ -80,4 +80,7 @@ endif (MSVC)
 find_library(TORCH_PYTHON_LIBRARY torch_python PATHS "${TORCH_INSTALL_PREFIX}/lib")
 target_link_libraries(OXRPresentationPython PRIVATE ${TORCH_PYTHON_LIBRARY})
 
+target_compile_definitions(OXRPresentationPython PRIVATE $<$<CONFIG:Debug>:DEBUG>) # Add a clean DEBUG prepocessor define if applicable
+set_target_properties(OXRPresentationPython PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:OXRPresentationPython>") # For MSVC debugging
+
 install(TARGETS OXRPresentationPython DESTINATION .)
