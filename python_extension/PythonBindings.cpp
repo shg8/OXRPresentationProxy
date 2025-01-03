@@ -30,6 +30,7 @@ static MirrorView* g_mirrorView = nullptr;
 static Headset* g_headset = nullptr;
 static Renderer* g_renderer = nullptr;
 static uint32_t g_currentSwapchainImageIndex = 0;
+static bool enableMirrorView = false;
 
 // Initialize the VR system
 py::dict initialize() {
@@ -222,21 +223,21 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
     // Record and submit
     g_renderer->record(g_currentSwapchainImageIndex);
 
-    // Render to mirror view
-    MirrorView::RenderResult mirrorResult = g_mirrorView->render(g_currentSwapchainImageIndex);
-    if (mirrorResult == MirrorView::RenderResult::Error) {
-        throw std::runtime_error("Failed to render mirror view");
+    // Add mirror view rendering
+    MirrorView::RenderResult mirrorResult;
+    if (enableMirrorView) {
+        mirrorResult = mirrorView.render(swapchainImageIndex);
+        if (mirrorResult == MirrorView::RenderResult::Error) {
+            return EXIT_FAILURE;
+        }
     }
 
-    const bool mirrorViewVisible = (mirrorResult == MirrorView::RenderResult::Visible);
-    g_renderer->submit(mirrorViewVisible);
+    const bool mirrorViewVisible = (enableMirrorView && mirrorResult == MirrorView::RenderResult::Visible);
 
+    renderer->submit(mirrorViewVisible);
     if (mirrorViewVisible) {
-        g_mirrorView->present();
+        mirrorView.present();
     }
-
-    // End the frame
-    g_headset->endFrame();
 }
 
 PYBIND11_MODULE(OXRPresentationPython, m) {

@@ -323,7 +323,7 @@ namespace cudainterop
             /* hOffset = */ 0,
             devicePtr,
             devicePitch,
-            size.width * 4,   // width in bytes (4 channels * 1 float32 each = 4 bytes)
+            size.width * 4,
             size.height,
             cudaMemcpyDeviceToDevice
         );

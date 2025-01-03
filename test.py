@@ -18,7 +18,7 @@ def create_test_pattern(height, width, is_left_eye=True):
     rings = torch.sin(distance * 20) * 0.5 + 0.5
     gradient = 1.0 - distance
     
-    # Create RGBA tensor
+    # Create RGBA tensor (first as float32 for calculations)
     tensor = torch.zeros((height, width, 4), dtype=torch.float32, device='cuda')
     
     # Fill color channels
@@ -31,6 +31,9 @@ def create_test_pattern(height, width, is_left_eye=True):
     
     # Set alpha channel to fully opaque
     tensor[..., 3] = 1.0
+    
+    # Convert to uint8 (multiply by 255 and clamp)
+    tensor = (tensor * 255).clamp(0, 255).to(torch.uint8)
     
     # Ensure the tensor is contiguous and in the correct format
     tensor = tensor.contiguous()
