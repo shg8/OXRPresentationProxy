@@ -3,6 +3,7 @@
 #include "Util.h" // for error handling
 
 #include <stdexcept>
+#include <iostream>
 
 #ifdef _WIN32
 #include <windows.h>
