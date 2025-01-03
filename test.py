@@ -8,9 +8,9 @@ def create_test_pattern(height, width, is_left_eye=True):
     # Create a tensor with shape (H, W, 4) for RGBA
     tensor = torch.zeros((height, width, 4), dtype=torch.float32, device='cuda')
     
-    # Create coordinate grids
-    y = torch.linspace(0, 1, height).view(-1, 1).expand(height, width)
-    x = torch.linspace(0, 1, width).view(1, -1).expand(height, width)
+    # Create coordinate grids on CUDA
+    y = torch.linspace(0, 1, height, device='cuda').view(-1, 1).expand(height, width)
+    x = torch.linspace(0, 1, width, device='cuda').view(1, -1).expand(height, width)
     
     # Create a circular gradient
     center_x = 0.5
