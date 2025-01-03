@@ -226,17 +226,17 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
     // Add mirror view rendering
     MirrorView::RenderResult mirrorResult;
     if (enableMirrorView) {
-        mirrorResult = mirrorView.render(swapchainImageIndex);
+        mirrorResult = g_mirrorView->render(g_currentSwapchainImageIndex);
         if (mirrorResult == MirrorView::RenderResult::Error) {
-            return EXIT_FAILURE;
+            throw std::runtime_error("Failed to render mirror view");
         }
     }
 
     const bool mirrorViewVisible = (enableMirrorView && mirrorResult == MirrorView::RenderResult::Visible);
 
-    renderer->submit(mirrorViewVisible);
+    g_renderer->submit(mirrorViewVisible);
     if (mirrorViewVisible) {
-        mirrorView.present();
+        g_mirrorView->present();
     }
 }
 
