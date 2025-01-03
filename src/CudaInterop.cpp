@@ -14,9 +14,7 @@
 
 namespace cudainterop
 {
-    CudaVulkanImage createCudaVulkanImage(const Context* context,
-                                          VkExtent2D size,
-                                          VkFormat format)
+    CudaVulkanImage createCudaVulkanImage(const Context* context, VkExtent2D size, VkFormat format)
     {
         CudaVulkanImage result;
         result.extent = size;
@@ -313,6 +311,7 @@ namespace cudainterop
                                                 VkExtent2D size)
     {
         if (!image.valid || !image.cudaSurface) {
+            std::cerr << "CudaVulkanImage is not valid" << std::endl;
             return cudaErrorInvalidValue;
         }
 

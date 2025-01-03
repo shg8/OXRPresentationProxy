@@ -211,7 +211,6 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
         );
         
         if (result != cudaSuccess) {
-            // print error
             std::cerr << "CUDA error: " << cudaGetErrorString(result) << std::endl;
             throw std::runtime_error("Failed to copy tensor data to CUDA surface");
         }
