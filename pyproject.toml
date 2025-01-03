@@ -1,10 +1,11 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
-build-backend = "scikit_build_core.build"
-
-[project]
-name = "OXRPresentationPython"
-version = "0.0.0"
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "ninja",
+    "cmake>=3.12",
+]
+build-backend = "setuptools.build_meta"
 
 dependencies = [
     "torch >= 2.2",

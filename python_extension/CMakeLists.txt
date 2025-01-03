@@ -61,13 +61,6 @@ pybind11_add_module(OXRPresentationPython
     ${CMAKE_SOURCE_DIR}/src/Util.cpp
 )
 
-# Configure the Python extension
-set_target_properties(OXRPresentationPython PROPERTIES
-    PREFIX ""
-    SUFFIX ".dll"
-    CXX_STANDARD 17  # PyTorch requires C++17
-)
-
 target_include_directories(OXRPresentationPython PRIVATE 
     ${Vulkan_INCLUDE_DIRS} 
     ${CUDAToolkit_INCLUDE_DIRS}
