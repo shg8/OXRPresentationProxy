@@ -80,12 +80,4 @@ endif (MSVC)
 find_library(TORCH_PYTHON_LIBRARY torch_python PATHS "${TORCH_INSTALL_PREFIX}/lib")
 target_link_libraries(OXRPresentationPython PRIVATE ${TORCH_PYTHON_LIBRARY})
 
-# Copy shared library binaries on Windows
-if (WIN32)
-    set(DLLS "${CMAKE_SOURCE_DIR}/external/glfw/lib/win/glfw3.dll")
-    foreach (DLL ${DLLS})
-        add_custom_command(TARGET OXRPresentationPython POST_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${DLL} "$<TARGET_FILE_DIR:OXRPresentationPython>")
-    endforeach ()
-endif ()
-
 install(TARGETS OXRPresentationPython DESTINATION .)

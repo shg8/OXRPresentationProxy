@@ -61,11 +61,3 @@ target_link_libraries(${TARGET_NAME} PRIVATE CUDA::cudart)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG>) # Add a clean DEBUG prepocessor define if applicable
 set_target_properties(${TARGET_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>") # For MSVC debugging
-
-# Copy shared library binaries on Windows
-if (WIN32)
-    set(DLLS "${CMAKE_SOURCE_DIR}/external/glfw/lib/win/glfw3.dll")
-    foreach (DLL ${DLLS})
-        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${DLL} "$<TARGET_FILE_DIR:${TARGET_NAME}>")
-    endforeach ()
-endif ()
