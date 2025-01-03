@@ -18,8 +18,8 @@ def create_test_pattern(height, width, is_left_eye=True):
     rings = torch.sin(distance * 20) * 0.5 + 0.5
     gradient = 1.0 - distance
     
-    # Create RGBA tensor with proper memory layout
-    tensor = torch.zeros((height, width, 4), dtype=torch.float32, device='cuda', memory_format=torch.contiguous_format)
+    # Create RGBA tensor
+    tensor = torch.zeros((height, width, 4), dtype=torch.float32, device='cuda')
     
     # Fill color channels
     if is_left_eye:
