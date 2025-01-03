@@ -8,27 +8,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
-execute_process(
-        COMMAND "${Python3_EXECUTABLE}" "-c" "import os, sys; print(os.path.dirname(sys.executable))"
-        OUTPUT_VARIABLE PYTHON_DIR
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        COMMAND_ERROR_IS_FATAL ANY
-)
-message(STATUS "Python directory: ${PYTHON_DIR}")
-
-# Set PYTHONPATH to include the site-packages directory
-set(SITE_PACKAGES "${PYTHON_DIR}/Lib/site-packages")
-message(STATUS "Looking for torch in: ${SITE_PACKAGES}")
-
-execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${SITE_PACKAGES}" "${Python3_EXECUTABLE}" "-c" "import torch;print(torch.utils.cmake_prefix_path)"
-        OUTPUT_VARIABLE PT_CMAKE_PREFIX
-        COMMAND_ECHO STDOUT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        COMMAND_ERROR_IS_FATAL ANY
-)
-
 if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
     message("libtorch workaround")
     add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
