@@ -237,6 +237,8 @@ void submitFrame(torch::Tensor leftEyeTensor, torch::Tensor rightEyeTensor) {
     if (mirrorViewVisible) {
         g_mirrorView->present();
     }
+
+    g_headset->endFrame();
 }
 
 PYBIND11_MODULE(OXRPresentationPython, m) {
